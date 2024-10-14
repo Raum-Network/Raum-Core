@@ -1,0 +1,19 @@
+[package]
+name = "pair"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+doctest = false
+
+[dependencies]
+soroban-sdk = { version = "21.7.4" }
+soroban-token-sdk = { version = "21.7.4" }
+num-integer = { version = "0.1.45", default-features = false, features = ["i128"] }
+
+[dev-dependencies]
+soroban-sdk = { version = "21.7.4", features = ["testutils"] } 
+
+
