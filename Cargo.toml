@@ -6,7 +6,7 @@ members = [
 
 [workspace.dependencies]
 soroban-sdk = "21.0.0"
-raumfi_library = "0.0.2"
+raumfi_library = "0.1.0"
 
 
 [profile.release]

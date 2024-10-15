@@ -1,11 +1,13 @@
+use core::clone;
+
 use raumfi_library::RaumFiV2Library;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, token, Address, Env, BytesN, Symbol, Vec, Map,
-    IntoVal, TryFromVal, ConversionError, symbol_short , token::Client as TokenClient
+    contract, contractimpl, Address, Env,  Symbol, Vec,
+     symbol_short , token::Client as TokenClient, log
 };
 use raumfi_library::*;
 
-use crate::factory_client::{ self, FactoryClient};
+use crate::factory_client::FactoryClient;
 use crate::helper::*;
 
 soroban_sdk::contractimport!(
@@ -40,6 +42,10 @@ impl RaumFiRouter {
         }
     }
 
+    fn get_native(env: &Env) -> Address {
+        env.storage().instance().get(&NATIVE).unwrap()
+    }
+
     fn _add_liquidity(
         env: &Env,
         token_a: &Address,
@@ -50,11 +56,13 @@ impl RaumFiRouter {
         amount_b_min: i128,
     ) -> (i128, i128) {
         let factory = Self::factory(env);
+        log!(&env, "factory: {}", factory);
         let factory_client = FactoryClient::new(env, &factory);
         if !factory_client.pair_exists(token_a, token_b) {
             factory_client.create_new_pair(token_a, token_b);
         }
-        let (token_0,token_1) = sort_tokens(token_a.clone(), token_b.clone()).unwrap();
+        
+        let (token_0, token_1) = crate::helper::sort_tokens(token_a.clone(), token_b.clone()).unwrap();
         let pair = factory_client.get_pair(&token_0, &token_1).unwrap();
         let pair_client = PairClient::new(env, &pair);
         let (reserve_a, reserve_b) = pair_client.get_reserves();
@@ -101,7 +109,7 @@ impl RaumFiRouter {
             amount_b_min,
         );
         
-        let pair = pair_for(env.clone(), Self::factory(&env), token_a.clone(), token_b.clone()).unwrap();
+        let pair = crate::helper::pair_for(env.clone(), Self::factory(&env), token_a.clone(), token_b.clone()).unwrap();
         let pair_client = PairClient::new(&env, &pair);
         TokenClient::new(&env, &token_a).transfer(&to, &pair, &amount_a);
         TokenClient::new(&env, &token_b).transfer(&to, &pair, &amount_b);
@@ -121,14 +129,15 @@ impl RaumFiRouter {
         deadline: u64,
     ) -> (i128, i128) {
         Self::ensure(&env, deadline);
+        to.require_auth();
         let factory_client = FactoryClient::new(&env, &Self::factory(&env));
         if !factory_client.pair_exists(&token_a, &token_b) {
             panic!("RaumFiRouter: PAIR_DOES_NOT_EXIST");
         }
-        let pair = pair_for(env.clone(), factory_client.address, token_a.clone(), token_b.clone()).unwrap();
+        let pair = crate::helper::pair_for(env.clone(), factory_client.address, token_a.clone(), token_b.clone()).unwrap();
         TokenClient::new(&env, &pair).transfer(&to, &pair, &liquidity);
         let (amount0, amount1) = PairClient::new(&env, &pair).burn(&to);
-        let (token0, _) = sort_tokens(token_a.clone(), token_b.clone()).unwrap();
+        let (token0, _) = crate::helper::sort_tokens(token_a.clone(), token_b.clone()).unwrap();
         let (amount_a, amount_b) = if token_a == token0 {
             (amount0, amount1)
         } else {
@@ -144,7 +153,9 @@ impl RaumFiRouter {
     }
 
     pub fn quote(env: Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> i128 {
-        RaumFiV2Library::quote(&env, amount_a, reserve_a, reserve_b).unwrap()
+        let quote = RaumFiV2Library::quote(&env, amount_a, reserve_a, reserve_b).unwrap();
+        log!(&env, "quote: {}", quote);
+        quote
     }
 
     pub fn get_amount_out(env: Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> i128 {
@@ -168,16 +179,18 @@ impl RaumFiRouter {
         amount_in: i128,
         amount_out_min: i128,
         path: Vec<Address>,
+
         to: Address,
         deadline: u64,
     ) -> Vec<i128> {
         Self::ensure(&env, deadline);
-        let amounts = RaumFiV2Library::get_amounts_out(&env, &Self::Factory(&env), amount_in, &path);
-        if amounts[amounts.len() - 1] < amount_out_min {
-            panic!("UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT");
+        to.require_auth();
+        let amounts = RaumFiV2Library::get_amounts_out(&env, Self::factory(&env), amount_in, path.clone()).unwrap();
+        if amounts.get(amounts.len() - 1).unwrap() < amount_out_min {
+            panic!("RaumFiRouter: INSUFFICIENT_OUTPUT_AMOUNT");
         }
-        let pair = RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]);
-        TransferHelper::safe_transfer_from(&env, &path[0], &env.current_contract_address(), &pair, amounts[0]);
+        let pair = RaumFiV2Library::pair_for(&env, Self::factory(&env), path.clone().get(0).unwrap().clone(), path.clone().get(1).unwrap().clone()).unwrap();
+        TokenClient::new(&env, &path.get(0).unwrap()).transfer(&to, &pair, &amounts.get(0).unwrap());
         Self::_swap(&env, &amounts, &path, &to);
         amounts
     }
@@ -191,130 +204,35 @@ impl RaumFiRouter {
         deadline: u64,
     ) -> Vec<i128> {
         Self::ensure(&env, deadline);
-        let amounts = RaumFiV2Library::get_amounts_in(&env, &Self::Factory(&env), amount_out, &path);
-        if amounts[0] > amount_in_max {
-            panic!("UniswapV2Router: EXCESSIVE_INPUT_AMOUNT");
+        to.require_auth();
+
+        let amounts = RaumFiV2Library::get_amounts_in(&env, Self::factory(&env), amount_out, path.clone()).unwrap();
+        if amounts.get(0).unwrap() > amount_in_max {
+            panic!("RaumFiRouter: EXCESSIVE_INPUT_AMOUNT");
         }
-        let pair = RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]);
-        TransferHelper::safe_transfer_from(&env, &path[0], &env.current_contract_address(), &pair, amounts[0]);
+        let pair = RaumFiV2Library::pair_for(&env, Self::factory(&env), path.get(0).unwrap().clone(), path.get(1).unwrap().clone()).unwrap();
+        TokenClient::new(&env, &path.get(0).unwrap()).transfer(&to, &pair, &amounts.get(0).unwrap());
         Self::_swap(&env, &amounts, &path, &to);
-        amounts
-    }
-
-    pub fn swap_exact_eth_for_tokens(
-        env: Env,
-        amount_out_min: i128,
-        path: Vec<Address>,
-        to: Address,
-        deadline: u64,
-    ) -> Vec<i128> {
-        Self::ensure(&env, deadline);
-        let Native = Self::Native(&env);
-        if path[0] != Native {
-            panic!("UniswapV2Router: INVALID_PATH");
-        }
-        let amounts = RaumFiV2Library::get_amounts_out(&env, &Self::Factory(&env), env.attached_value(), &path);
-        if amounts[amounts.len() - 1] < amount_out_min {
-            panic!("UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT");
-        }
-        INativeClient::new(&env, &Native).deposit(&env.current_contract_address(), env.attached_value());
-        assert!(INativeClient::new(&env, &Native).transfer(&RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]), amounts[0]));
-        Self::_swap(&env, &amounts, &path, &to);
-        amounts
-    }
-
-    pub fn swap_tokens_for_exact_eth(
-        env: Env,
-        amount_out: i128,
-        amount_in_max: i128,
-        path: Vec<Address>,
-        to: Address,
-        deadline: u64,
-    ) -> Vec<i128> {
-        Self::ensure(&env, deadline);
-        let Native = Self::Native(&env);
-        if path[path.len() - 1] != Native {
-            panic!("UniswapV2Router: INVALID_PATH");
-        }
-        let amounts = RaumFiV2Library::get_amounts_in(&env, &Self::Factory(&env), amount_out, &path);
-        if amounts[0] > amount_in_max {
-            panic!("UniswapV2Router: EXCESSIVE_INPUT_AMOUNT");
-        }
-        let pair = RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]);
-        TransferHelper::safe_transfer_from(&env, &path[0], &env.current_contract_address(), &pair, amounts[0]);
-        Self::_swap(&env, &amounts, &path, &env.current_contract_address());
-        INativeClient::new(&env, &Native).withdraw(amounts[amounts.len() - 1]);
-        TransferHelper::safe_transfer_eth(&env, &to, amounts[amounts.len() - 1]);
-        amounts
-    }
-
-    pub fn swap_exact_tokens_for_eth(
-        env: Env,
-        amount_in: i128,
-        amount_out_min: i128,
-        path: Vec<Address>,
-        to: Address,
-        deadline: u64,
-    ) -> Vec<i128> {
-        Self::ensure(&env, deadline);
-        let Native = Self::Native(&env);
-        if path[path.len() - 1] != Native {
-            panic!("UniswapV2Router: INVALID_PATH");
-        }
-        let amounts = RaumFiV2Library::get_amounts_out(&env, &Self::Factory(&env), amount_in, &path);
-        if amounts[amounts.len() - 1] < amount_out_min {
-            panic!("UniswapV2Router: INSUFFICIENT_OUTPUT_AMOUNT");
-        }
-        let pair = RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]);
-        TransferHelper::safe_transfer_from(&env, &path[0], &env.current_contract_address(), &pair, amounts[0]);
-        Self::_swap(&env, &amounts, &path, &env.current_contract_address());
-        INativeClient::new(&env, &Native).withdraw(amounts[amounts.len() - 1]);
-        TransferHelper::safe_transfer_eth(&env, &to, amounts[amounts.len() - 1]);
-        amounts
-    }
-
-    pub fn swap_eth_for_exact_tokens(
-        env: Env,
-        amount_out: i128,
-        path: Vec<Address>,
-        to: Address,
-        deadline: u64,
-    ) -> Vec<i128> {
-        Self::ensure(&env, deadline);
-        let Native = Self::Native(&env);
-        if path[0] != Native {
-            panic!("UniswapV2Router: INVALID_PATH");
-        }
-        let amounts = RaumFiV2Library::get_amounts_in(&env, &Self::Factory(&env), amount_out, &path);
-        if amounts[0] > env.attached_value() {
-            panic!("UniswapV2Router: EXCESSIVE_INPUT_AMOUNT");
-        }
-        INativeClient::new(&env, &Native).deposit(&env.current_contract_address(), amounts[0]);
-        assert!(INativeClient::new(&env, &Native).transfer(&RaumFiV2Library::pair_for(&env, &Self::Factory(&env), &path[0], &path[1]), amounts[0]));
-        Self::_swap(&env, &amounts, &path, &to);
-        if env.attached_value() > amounts[0] {
-            TransferHelper::safe_transfer_eth(&env, &env.current_contract_address(), env.attached_value() - amounts[0]);
-        }
         amounts
     }
 
     fn _swap(env: &Env, amounts: &Vec<i128>, path: &Vec<Address>, _to: &Address) {
         for i in 0..path.len() - 1 {
-            let (input, output) = (path[i].clone(), path[i + 1].clone());
-            let (token0, _) = RaumFiV2Library::sort_tokens(&input, &output);
-            let amount_out = amounts[i + 1];
+            let (input, output) = (path.get(i).unwrap().clone(), path.get(i + 1).unwrap().clone());
+            let (token0, _) = RaumFiV2Library::sort_tokens(input.clone(), output.clone()).unwrap();
+            let amount_out = amounts.get(i + 1).unwrap();
             let (amount0_out, amount1_out) = if input == token0 {
                 (0, amount_out)
             } else {
                 (amount_out, 0)
             };
             let to = if i < path.len() - 2 {
-                RaumFiV2Library::pair_for(env, &Self::Factory(env), &output, &path[i + 2])
+                RaumFiV2Library::pair_for(env, Self::factory(env), output.clone(), path.get(i + 2).unwrap().clone()).unwrap()
             } else {
                 _to.clone()
             };
-            let pair = RaumFiV2Library::pair_for(env, &Self::Factory(env), &input, &output);
-            PairClient::new(env, &pair).swap(&amount0_out, &amount1_out, &to, &Vec::new());
+            let pair = RaumFiV2Library::pair_for(env, Self::factory(env), input.clone(), output.clone()).unwrap();
+            PairClient::new(env, &pair).swap(&amount0_out, &amount1_out, &to);
         }
     }
 }
