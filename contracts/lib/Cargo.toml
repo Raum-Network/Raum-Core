@@ -1,9 +1,16 @@
 [package]
-name = "raumfi-library"
+name = "raumfi_library"
 version = "0.0.2"
-authors = [" Madhur <tora@raum.network>"]
+authors = [" tora <tora@raum.network>"]
 edition = "2021"
-publish = false
+description = "Library Periphery for RaumFiDex"
+homepage = "https://github.com/Raum-Network/Raum-Core/contracts/lib"
+repository = "https://github.com/Raum-Network/Raum-Core/contracts/lib"
+readme = "README.md"
+license = "MIT"
+keywords = [ "raumfi", "dex", "soroban"]
+rust-version = "1.73"
+publish = true
 
 [lib]
 crate-type = ["cdylib"]
@@ -11,6 +18,7 @@ crate-type = ["cdylib"]
 [dependencies]
 soroban-sdk = { version = "21.7.4" }
 num-integer = { version = "0.1.45", default-features = false, features = ["i128"] }
+
 
 [dev_dependencies]
 soroban-sdk = { version = "21.7.4", features = ["testutils"] }

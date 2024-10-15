@@ -77,17 +77,11 @@ pub trait RaumFiLibraryTrait {
     
     /// Check if the constant product is maintained after a swap
     fn is_constant_product_maintained(
+        env: &Env,
         reserve_a: i128,
         reserve_b: i128,
         new_reserve_a: i128,
         new_reserve_b: i128,
     ) -> bool;
-    
-    /// Calculate the next sqrt price after a swap
-    fn calculate_next_sqrt_price(
-        sqrt_price_x96: i128,
-        liquidity: i128,
-        amount: i128,
-        zero_for_one: bool,
-    ) -> i128;
 }
+    

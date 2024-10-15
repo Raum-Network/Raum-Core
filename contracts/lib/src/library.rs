@@ -5,10 +5,10 @@
 
 #![no_std]
 
-use soroban_sdk::log;
+
 // use num_integer::Roots;
 use soroban_sdk::{
-    contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol, Vec, xdr::ToXdr
+    contract, contractimpl, contracttype, Address, Bytes, BytesN, Env, IntoVal, Symbol, Vec, xdr::ToXdr , log
 };
 
 use crate::interface::RaumFiLibraryTrait;
@@ -26,6 +26,27 @@ use pair::Client as PairClient;
 #[contracttype]
 pub enum DataKey {
     Factory,
+}
+
+pub trait CheckedCeilingDiv {
+    fn checked_ceiling_div(self, divisor: i128) -> Option<i128>;
+}
+
+impl CheckedCeilingDiv for i128 {
+    fn checked_ceiling_div(self, divisor: i128) -> Option<i128> {
+        if divisor == 0 {
+            return None;
+        }
+        
+        let quotient = self / divisor;
+        let remainder = self % divisor;
+        
+        if remainder == 0 {
+            Some(quotient)
+        } else {
+            quotient.checked_add(1)
+        }
+    }
 }
 
 #[contract]
@@ -102,14 +123,16 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         if reserve_in <= 0 || reserve_out <= 0 {
             return Err(RaumFiLibraryError::InsufficientLiquidity);
         }
-        let amount_in_with_fee = amount_in.checked_mul(997).ok_or(RaumFiLibraryError::Overflow)?;
+        
+        // Calculate fee (0.3% of amount_in)
+        let fee = (amount_in * 3).checked_div(1000).ok_or(RaumFiLibraryError::DivisionByZero)?;
+        let fee = if fee == 0 { 1 } else { fee };
+        
+        let amount_in_with_fee = amount_in.checked_sub(fee).ok_or(RaumFiLibraryError::Overflow)?;
         let numerator = amount_in_with_fee.checked_mul(reserve_out).ok_or(RaumFiLibraryError::Overflow)?;
-        let denominator = reserve_in
-            .checked_mul(1000)
-            .ok_or(RaumFiLibraryError::Overflow)?
-            .checked_add(amount_in_with_fee)
-            .ok_or(RaumFiLibraryError::Overflow)?;
-        numerator.checked_div(denominator).ok_or(RaumFiLibraryError::DivisionByZero)
+        let denominator = reserve_in.checked_add(amount_in_with_fee).ok_or(RaumFiLibraryError::Overflow)?;
+        
+        Ok(numerator.checked_div(denominator).ok_or(RaumFiLibraryError::DivisionByZero)?)
     }
 
     // Calculate the required input amount of the other asset
@@ -120,6 +143,7 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         if reserve_in <= 0 || reserve_out <= 0 {
             return Err(RaumFiLibraryError::InsufficientLiquidity);
         }
+
         let numerator = reserve_in
             .checked_mul(amount_out)
             .ok_or(RaumFiLibraryError::Overflow)?
@@ -130,11 +154,16 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
             .ok_or(RaumFiLibraryError::Overflow)?
             .checked_mul(997)
             .ok_or(RaumFiLibraryError::Overflow)?;
-        numerator
-            .checked_div(denominator)
-            .ok_or(RaumFiLibraryError::DivisionByZero)?
-            .checked_add(1)
-            .ok_or(RaumFiLibraryError::Overflow)
+        let division_result = numerator
+            .checked_ceiling_div(denominator)
+            .ok_or(RaumFiLibraryError::DivisionByZero)?.checked_add(1)
+            .ok_or(RaumFiLibraryError::Overflow)?;
+        Ok(division_result)
+        // log!(&env, "division_result: {}", division_result , "numerator: " , numerator , "denominator: " , denominator);
+        // let result = if division_result == 0 { division_result + 1 } else { division_result };
+        // result
+        //     .checked_add(1)
+        //     .ok_or(RaumFiLibraryError::Overflow)
     }
 
     // Perform chained getAmountOut calculations on any number of pairs
@@ -294,50 +323,58 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         Ok((amount_a, amount_b))
     }
     
-    // Update this function to use the method from RaumFiV2Library
     fn is_constant_product_maintained(
+        env: &Env,
         reserve_a: i128,
         reserve_b: i128,
         new_reserve_a: i128,
         new_reserve_b: i128,
     ) -> bool {
-        let k_before = RaumFiV2Library::calculate_k(reserve_a, reserve_b).unwrap();
-        let k_after = RaumFiV2Library::calculate_k(new_reserve_a, new_reserve_b).unwrap();
-        k_after >= k_before
-    }
-    
-    // Calculate the next sqrt price after a swap
-    fn calculate_next_sqrt_price(
-        sqrt_price_x96: i128,
-        liquidity: i128,
-        amount: i128,
-        zero_for_one: bool,
-    ) -> i128 {
-        if zero_for_one {
-            let numerator = sqrt_price_x96
-                .checked_mul(sqrt_price_x96)
-                .unwrap()
-                .checked_mul(liquidity)
-                .unwrap();
-            let denominator = liquidity
-                .checked_mul(2i128.pow(96))
-                .unwrap()
-                .checked_add(amount.checked_mul(sqrt_price_x96).unwrap())
-                .unwrap();
-            numerator.checked_div(denominator).unwrap().sqrt()
+        if let (Ok(k_before), Ok(k_after)) = (
+            RaumFiV2Library::calculate_k(reserve_a, reserve_b),
+            RaumFiV2Library::calculate_k(new_reserve_a, new_reserve_b)
+        ) {
+            log!(env, "k_before: {}", k_before);
+            log!(env, "k_after: {}", k_after);
+            k_after >= k_before
         } else {
-            let numerator = sqrt_price_x96
-                .checked_add(
-                    amount
-                        .checked_mul(2i128.pow(96))
-                        .unwrap()
-                        .checked_div(liquidity)
-                        .unwrap(),
-                )
-                .unwrap();
-            numerator
+            false // Return false if there's an error in calculation
         }
     }
+    
+    // // Calculate the next sqrt price after a swap
+    // fn calculate_next_sqrt_price(
+    //     sqrt_price_x96: i128,
+    //     liquidity: i128,
+    //     amount: i128,
+    //     zero_for_one: bool,
+    // ) -> i128 {
+    //     if zero_for_one {
+    //         let numerator = sqrt_price_x96
+    //             .checked_mul(sqrt_price_x96)
+    //             .unwrap()
+    //             .checked_mul(liquidity)
+    //             .unwrap();
+    //         let denominator = liquidity
+    //             .checked_mul(2i128.pow(96))
+    //             .unwrap()
+    //             .checked_add(amount.checked_mul(sqrt_price_x96).unwrap())
+    //             .unwrap();
+    //         numerator.checked_div(denominator).unwrap().sqrt()
+    //     } else {
+    //         let numerator = sqrt_price_x96
+    //             .checked_add(
+    //                 amount
+    //                     .checked_mul(2i128.pow(96))
+    //                     .unwrap()
+    //                     .checked_div(liquidity)
+    //                     .unwrap(),
+    //             )
+    //             .unwrap();
+    //         numerator
+    //     }
+    // }
 }
+
 
 
