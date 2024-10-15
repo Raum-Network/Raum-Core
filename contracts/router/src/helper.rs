@@ -1,12 +1,6 @@
 use soroban_sdk::{Address, Env, xdr::ToXdr, BytesN, Bytes};
 use crate::error::RaumFiRouterError;
 
-
-/// Generates a unique cryptographic salt value for a pair of token addresses.
-///
-/// # Returns
-///
-/// Returns a `BytesN<32>` representing the salt for the given token pair.
 fn pair_salt(e: &Env, token_a: Address, token_b: Address) -> BytesN<32> {
     let mut salt = Bytes::new(e);
 
@@ -18,11 +12,6 @@ fn pair_salt(e: &Env, token_a: Address, token_b: Address) -> BytesN<32> {
     e.crypto().sha256(&salt).into()
 }
 
-/// Sorts two token addresses in a consistent order.
-///
-/// # Returns
-///
-/// Returns `Result<(Address, Address), RaumFiLibraryError>` where `Ok` contains a tuple with the sorted token addresses, and `Err` indicates an error such as identical tokens.
 pub fn sort_tokens(token_a: Address, token_b: Address) -> Result<(Address, Address), RaumFiRouterError> {
     if token_a == token_b {
         return Err(RaumFiRouterError::SortIdenticalTokens);
@@ -35,12 +24,6 @@ pub fn sort_tokens(token_a: Address, token_b: Address) -> Result<(Address, Addre
     }
 }
 
-/// Calculates the deterministic address for a pair without making any external calls.
-/// check <https://github.com/paltalabs/deterministic-address-soroban>
-/// 
-/// # Returns
-///
-/// Returns `Result<Address, RaumFiLibraryError>` where `Ok` contains the deterministic address for the pair, and `Err` indicates an error such as identical tokens or an issue with sorting.
 pub fn pair_for(e: Env, factory: Address, token_a: Address, token_b: Address) -> Result<Address, RaumFiRouterError> {
     let (token_0, token_1) = sort_tokens(token_a, token_b)?;
     let salt = pair_salt(&e, token_0, token_1);

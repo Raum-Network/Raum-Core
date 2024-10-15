@@ -5,7 +5,7 @@ use soroban_sdk::{
 
 use crate::factory_client::{ self, FactoryClient};
 use crate::helper::*;
-use crate::library::*;
+use raumfi_library::*;
 soroban_sdk::contractimport!(
     file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
 );
@@ -56,18 +56,17 @@ impl RaumFiRouter {
         let pair = factory_client.get_pair(&token_0, &token_1).unwrap();
         let pair_client = PairClient::new(env, &pair);
         let (reserve_a, reserve_b) = pair_client.get_reserves();
-        let library_client = LibraryClient::new(env, &pair);
         if reserve_a == 0 && reserve_b == 0 {
             (amount_a_desired, amount_b_desired)
         } else {
-            let amount_b_optimal = library_client.quote( &amount_a_desired, &reserve_a, &reserve_b);
+            let amount_b_optimal = quote( &amount_a_desired, &reserve_a, &reserve_b);
             if amount_b_optimal <= amount_b_desired {
                 if amount_b_optimal < amount_b_min {
                     panic!("RaumFiRouter: INSUFFICIENT_B_AMOUNT");
                 }
                 (amount_a_desired, amount_b_optimal)
             } else {
-                let amount_a_optimal = library_client.quote( &amount_b_desired, &reserve_b, &reserve_a);
+                let amount_a_optimal = raumfi_library::Library::quote( &amount_b_desired, &reserve_b, &reserve_a);
                 assert!(amount_a_optimal <= amount_a_desired);
                 if amount_a_optimal < amount_a_min {
                     panic!("RaumFiRouter: INSUFFICIENT_A_AMOUNT");
