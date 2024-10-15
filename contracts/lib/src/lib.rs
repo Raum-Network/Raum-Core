@@ -104,42 +104,42 @@ fn sort_tokens( token_a: Address, token_b: Address) -> Result<(Address, Address)
     
 /// Calculate the address for a pair
 fn pair_for(env: &Env, factory: Address, token_a: Address, token_b: Address) -> Result<Address, RaumFiLibraryError>{
-    RaumFiV2Library::pair_for(env, factory, token_a, token_b)
+    pair_for(env, factory, token_a, token_b)
 }
 
 /// Fetch and sort the reserves for a pair of tokens
 fn get_reserves(env: &Env, factory: Address, token_a: Address, token_b: Address) -> Result<(i128, i128), RaumFiLibraryError>{
-    RaumFiV2Library::get_reserves(env, factory, token_a, token_b)
+    get_reserves(env, factory, token_a, token_b)
 }
 
 /// Quote the amount of output tokens for a given input amount and reserves
 fn quote(env: &Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::quote(env, amount_a, reserve_a, reserve_b)
+    quote(env, amount_a, reserve_a, reserve_b)
 }
 
 /// Calculate the output amount for a swap
 fn get_amount_out(env: &Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::get_amount_out(env, amount_in, reserve_in, reserve_out)
+    get_amount_out(env, amount_in, reserve_in, reserve_out)
 }
 
 /// Calculate the input amount for a desired output
 fn get_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::get_amount_in(env, amount_out, reserve_in, reserve_out)
+    get_amount_in(env, amount_out, reserve_in, reserve_out)
 }
 
 /// Calculate amounts out for a given input amount and path
 fn get_amounts_out(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
-    RaumFiV2Library::get_amounts_out(env, factory, amount_in, path)
+    get_amounts_out(env, factory, amount_in, path)
 }
 
 /// Calculate amounts in for a desired output amount and path
 fn get_amounts_in(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
-    RaumFiV2Library::get_amounts_in(env, factory, amount_out, path)
+    get_amounts_in(env, factory, amount_out, path)
 }
 
 /// Calculate the constant product 'k'
 fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::calculate_k(reserve_a, reserve_b)
+    calculate_k(reserve_a, reserve_b)
 }
 
 /// Calculate optimal liquidity amounts
@@ -152,7 +152,7 @@ fn optimal_liquidity(
     reserve_a: i128,
     reserve_b: i128,
 ) -> Result<(i128, i128), RaumFiLibraryError>{
-    RaumFiV2Library::optimal_liquidity(env, amount_a_desired, amount_b_desired, amount_a_min, amount_b_min, reserve_a, reserve_b)
+    optimal_liquidity(env, amount_a_desired, amount_b_desired, amount_a_min, amount_b_min, reserve_a, reserve_b)
 }
 
 /// Calculate price impact of a swap
@@ -163,7 +163,7 @@ fn calculate_price_impact(
     reserve_in: i128,
     reserve_out: i128,
 ) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::calculate_price_impact(env, amount_in, amount_out, reserve_in, reserve_out)
+    calculate_price_impact(env, amount_in, amount_out, reserve_in, reserve_out)
 }
 
 /// Calculate liquidity to be minted
@@ -175,7 +175,7 @@ fn calculate_liquidity_minted(
     reserve_a: i128,
     reserve_b: i128,
 ) -> Result<i128, RaumFiLibraryError>{
-    RaumFiV2Library::calculate_liquidity_minted(env, total_supply, amount_a, amount_b, reserve_a, reserve_b)
+    calculate_liquidity_minted(env, total_supply, amount_a, amount_b, reserve_a, reserve_b)
 }
 
 /// Calculate amounts to be returned when burning liquidity
@@ -186,7 +186,7 @@ fn calculate_burn_amounts(
     reserve_a: i128,
     reserve_b: i128,
 ) -> Result<(i128, i128), RaumFiLibraryError>{
-    RaumFiV2Library::calculate_burn_amounts(env, liquidity, total_supply, reserve_a, reserve_b)
+    calculate_burn_amounts(env, liquidity, total_supply, reserve_a, reserve_b)
 }
 
 /// Check if the constant product is maintained after a swap
@@ -197,6 +197,6 @@ fn is_constant_product_maintained(
     new_reserve_a: i128,
     new_reserve_b: i128,
 ) -> bool{
-    RaumFiV2Library::is_constant_product_maintained(env, reserve_a, reserve_b, new_reserve_a, new_reserve_b)
+    is_constant_product_maintained(env, reserve_a, reserve_b, new_reserve_a, new_reserve_b)
 }
 }
