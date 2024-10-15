@@ -99,7 +99,7 @@ pub struct RaumFiV2Library;
 impl RaumFiLibraryTrait for RaumFiV2Library {
 /// Sort two token addresses
 fn sort_tokens( token_a: Address, token_b: Address) -> Result<(Address, Address), RaumFiLibraryError>{
-   RaumFiV2Library::sort_tokens(token_a, token_b)
+   sort_tokens(token_a, token_b)
 }
     
 /// Calculate the address for a pair

@@ -33,7 +33,7 @@ pub trait CheckedCeilingDiv {
 }
 
 impl CheckedCeilingDiv for i128 {
-    fn checked_ceiling_div(self, divisor: i128) -> Option<i128> {
+     fn checked_ceiling_div(self, divisor: i128) -> Option<i128> {
         if divisor == 0 {
             return None;
         }
@@ -50,7 +50,7 @@ impl CheckedCeilingDiv for i128 {
 }
 
 
-    fn sort_tokens( token_a: Address, token_b: Address) -> Result<(Address, Address), RaumFiLibraryError> {
+    pub fn sort_tokens( token_a: Address, token_b: Address) -> Result<(Address, Address), RaumFiLibraryError> {
         if token_a == token_b {
             return Err(RaumFiLibraryError::IdenticalAddresses);
         }
@@ -63,7 +63,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     
-    fn pair_for(env: &Env, factory: Address, token_a: Address, token_b: Address) -> Result<Address, RaumFiLibraryError> {
+    pub fn pair_for(env: &Env, factory: Address, token_a: Address, token_b: Address) -> Result<Address, RaumFiLibraryError> {
         let (token0, token1) = sort_tokens(token_a, token_b)?;
         let mut salt = Bytes::new(env);
 
@@ -78,7 +78,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Fetch and sort the reserves for a pair
-    fn get_reserves(
+    pub fn get_reserves(
         env: &Env,
         factory: Address,
         token_a: Address,
@@ -96,7 +96,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate equivalent amount of the other asset
-    fn quote(env: &Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn quote(env: &Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_a == 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -111,7 +111,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate the maximum output amount of the other asset
-    fn get_amount_out(env: &Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn get_amount_out(env: &Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_in <= 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -131,7 +131,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate the required input amount of the other asset
-    fn get_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn get_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_out <= 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -162,7 +162,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Perform chained getAmountOut calculations on any number of pairs
-    fn get_amounts_out(
+    pub fn get_amounts_out(
         env: &Env,
         factory: Address,
         amount_in: i128,
@@ -184,7 +184,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Perform chained getAmountIn calculations on any number of pairs
-    fn get_amounts_in(
+    pub fn get_amounts_in(
         env: &Env,
         factory: Address,
         amount_out: i128,
@@ -206,11 +206,11 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Add this method to the implementation
-    fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
         reserve_a.checked_mul(reserve_b).ok_or(RaumFiLibraryError::Overflow)
     }
 
-    fn optimal_liquidity(
+    pub fn optimal_liquidity(
         env: &Env,
         amount_a_desired: i128,
         amount_b_desired: i128,
@@ -240,7 +240,7 @@ impl CheckedCeilingDiv for i128 {
     }
     
     // Calculate the price impact of a trade
-    fn calculate_price_impact(
+    pub fn calculate_price_impact(
         env: &Env,
         amount_in: i128,
         amount_out: i128,
@@ -260,7 +260,7 @@ impl CheckedCeilingDiv for i128 {
     }
     
     // Calculate the liquidity minted from depositing tokens
-    fn calculate_liquidity_minted(
+    pub fn calculate_liquidity_minted(
         env: &Env,
         total_supply: i128,
         amount_a: i128,
@@ -292,7 +292,7 @@ impl CheckedCeilingDiv for i128 {
     }
     
     // Calculate the amount of tokens received when burning liquidity
-    fn calculate_burn_amounts(
+    pub fn calculate_burn_amounts(
         env: &Env,
         liquidity: i128,
         total_supply: i128,
@@ -318,7 +318,7 @@ impl CheckedCeilingDiv for i128 {
         Ok((amount_a, amount_b))
     }
     
-    fn is_constant_product_maintained(
+    pub fn is_constant_product_maintained(
         env: &Env,
         reserve_a: i128,
         reserve_b: i128,
