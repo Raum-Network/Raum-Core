@@ -49,11 +49,6 @@ impl CheckedCeilingDiv for i128 {
     }
 }
 
-#[contract]
-pub struct RaumFiV2Library;
-
-#[contractimpl]
-impl RaumFiLibraryTrait for RaumFiV2Library {
 
     fn sort_tokens( token_a: Address, token_b: Address) -> Result<(Address, Address), RaumFiLibraryError> {
         if token_a == token_b {
@@ -69,7 +64,7 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
 
     
     fn pair_for(env: &Env, factory: Address, token_a: Address, token_b: Address) -> Result<Address, RaumFiLibraryError> {
-        let (token0, token1) = Self::sort_tokens(token_a, token_b)?;
+        let (token0, token1) = sort_tokens(token_a, token_b)?;
         let mut salt = Bytes::new(env);
 
         salt.append(&token0.to_xdr(env));
@@ -89,8 +84,8 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         token_a: Address,
         token_b: Address,
     ) -> Result<(i128, i128), RaumFiLibraryError> {
-        let (token0, token1) = Self::sort_tokens(token_a.clone(), token_b.clone())?;
-        let pair = Self::pair_for(env, factory.clone(), token_a.clone(), token_b.clone())?;
+        let (token0, token1) = sort_tokens(token_a.clone(), token_b.clone())?;
+        let pair = pair_for(env, factory.clone(), token_a.clone(), token_b.clone())?;
         let token_pair = PairClient::new(env, &pair);
         let (reserve0, reserve1) = token_pair.get_reserves();
         Ok(if token_a == token0 {
@@ -180,9 +175,9 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         amounts.push_back(amount_in);
         for i in 0..path.len() - 1 {
             let (reserve_in, reserve_out) =
-                Self::get_reserves(env, factory.clone(), path.get(i).unwrap(), path.get(i + 1).unwrap())?;
+                get_reserves(env, factory.clone(), path.get(i).unwrap(), path.get(i + 1).unwrap())?;
             let amount_out =
-                Self::get_amount_out(env, amounts.get(i).unwrap(), reserve_in, reserve_out)?;
+                get_amount_out(env, amounts.get(i).unwrap(), reserve_in, reserve_out)?;
             amounts.push_back(amount_out);
         }
         Ok(amounts)
@@ -202,9 +197,9 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         amounts.push_front(amount_out);
         for i in (1..path.len()).rev() {
             let (reserve_in, reserve_out) =
-                Self::get_reserves(env, factory.clone(), path.get(i - 1).unwrap(), path.get(i).unwrap())?;
+                get_reserves(env, factory.clone(), path.get(i - 1).unwrap(), path.get(i).unwrap())?;
             let amount_in =
-                Self::get_amount_in(env, amounts.get(0).unwrap(), reserve_in, reserve_out)?;
+                get_amount_in(env, amounts.get(0).unwrap(), reserve_in, reserve_out)?;
             amounts.push_front(amount_in);
         }
         Ok(amounts)
@@ -228,7 +223,7 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
             return Ok((amount_a_desired, amount_b_desired));
         }
     
-        let amount_b_optimal = RaumFiV2Library::quote(env, amount_a_desired, reserve_a, reserve_b)?;
+        let amount_b_optimal = quote(env, amount_a_desired, reserve_a, reserve_b)?;
         if amount_b_optimal <= amount_b_desired {
             if amount_b_optimal < amount_b_min {
                 return Err(RaumFiLibraryError::InsufficientBAmount);
@@ -236,7 +231,7 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
             return Ok((amount_a_desired, amount_b_optimal));
         }
     
-        let amount_a_optimal = RaumFiV2Library::quote(env, amount_b_desired, reserve_b, reserve_a)?;
+        let amount_a_optimal = quote(env, amount_b_desired, reserve_b, reserve_a)?;
         assert!(amount_a_optimal <= amount_a_desired);
         if amount_a_optimal < amount_a_min {
             return Err(RaumFiLibraryError::InsufficientAAmount);
@@ -252,8 +247,8 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         reserve_in: i128,
         reserve_out: i128,
     ) -> Result<i128, RaumFiLibraryError> {
-        let mid_price = RaumFiV2Library::quote(env, 10u128.pow(18) as i128, reserve_in, reserve_out)?;
-        let execution_price = RaumFiV2Library::quote(env, 10u128.pow(18) as i128, amount_in, amount_out)?;
+        let mid_price = quote(env, 10u128.pow(18) as i128, reserve_in, reserve_out)?;
+        let execution_price = quote(env, 10u128.pow(18) as i128, amount_in, amount_out)?;
         let price_impact = mid_price
             .checked_sub(execution_price)
             .ok_or(RaumFiLibraryError::Overflow)?
@@ -331,8 +326,8 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
         new_reserve_b: i128,
     ) -> bool {
         if let (Ok(k_before), Ok(k_after)) = (
-            RaumFiV2Library::calculate_k(reserve_a, reserve_b),
-            RaumFiV2Library::calculate_k(new_reserve_a, new_reserve_b)
+            calculate_k(reserve_a, reserve_b),
+            calculate_k(new_reserve_a, new_reserve_b)
         ) {
             log!(env, "k_before: {}", k_before);
             log!(env, "k_after: {}", k_after);
@@ -341,40 +336,7 @@ impl RaumFiLibraryTrait for RaumFiV2Library {
             false // Return false if there's an error in calculation
         }
     }
-    
-    // // Calculate the next sqrt price after a swap
-    // fn calculate_next_sqrt_price(
-    //     sqrt_price_x96: i128,
-    //     liquidity: i128,
-    //     amount: i128,
-    //     zero_for_one: bool,
-    // ) -> i128 {
-    //     if zero_for_one {
-    //         let numerator = sqrt_price_x96
-    //             .checked_mul(sqrt_price_x96)
-    //             .unwrap()
-    //             .checked_mul(liquidity)
-    //             .unwrap();
-    //         let denominator = liquidity
-    //             .checked_mul(2i128.pow(96))
-    //             .unwrap()
-    //             .checked_add(amount.checked_mul(sqrt_price_x96).unwrap())
-    //             .unwrap();
-    //         numerator.checked_div(denominator).unwrap().sqrt()
-    //     } else {
-    //         let numerator = sqrt_price_x96
-    //             .checked_add(
-    //                 amount
-    //                     .checked_mul(2i128.pow(96))
-    //                     .unwrap()
-    //                     .checked_div(liquidity)
-    //                     .unwrap(),
-    //             )
-    //             .unwrap();
-    //         numerator
-    //     }
-    // }
-}
+
 
 
 

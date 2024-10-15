@@ -4,7 +4,8 @@ use super::*;
 use soroban_sdk::testutils::{Address as _, Ledger, LedgerInfo};
 use soroban_sdk::xdr::ToXdr;
 use soroban_sdk::{log, symbol_short, token, vec, Address, BytesN, Env , Bytes};
-use crate::library::{RaumFiV2LibraryClient  , RaumFiV2Library};
+use crate::RaumFiLibraryClient;
+use crate::RaumFiV2Library;
 
 
 use token::Client as TokenClient;
