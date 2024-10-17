@@ -93,7 +93,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate equivalent amount of the other asset
-    pub fn quote(env: &Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn calculate_quote(env: &Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_a == 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -220,7 +220,7 @@ impl CheckedCeilingDiv for i128 {
             return Ok((amount_a_desired, amount_b_desired));
         }
     
-        let amount_b_optimal = quote(env, amount_a_desired, reserve_a, reserve_b)?;
+        let amount_b_optimal = calculate_quote(env, amount_a_desired, reserve_a, reserve_b)?;
         if amount_b_optimal <= amount_b_desired {
             if amount_b_optimal < amount_b_min {
                 return Err(RaumFiLibraryError::InsufficientBAmount);
@@ -228,7 +228,7 @@ impl CheckedCeilingDiv for i128 {
             return Ok((amount_a_desired, amount_b_optimal));
         }
     
-        let amount_a_optimal = quote(env, amount_b_desired, reserve_b, reserve_a)?;
+        let amount_a_optimal = calculate_quote(env, amount_b_desired, reserve_b, reserve_a)?;
         assert!(amount_a_optimal <= amount_a_desired);
         if amount_a_optimal < amount_a_min {
             return Err(RaumFiLibraryError::InsufficientAAmount);
@@ -244,8 +244,8 @@ impl CheckedCeilingDiv for i128 {
         reserve_in: i128,
         reserve_out: i128,
     ) -> Result<i128, RaumFiLibraryError> {
-        let mid_price = quote(env, 10u128.pow(18) as i128, reserve_in, reserve_out)?;
-        let execution_price = quote(env, 10u128.pow(18) as i128, amount_in, amount_out)?;
+        let mid_price = calculate_quote(env, 10u128.pow(18) as i128, reserve_in, reserve_out)?;
+        let execution_price = calculate_quote(env, 10u128.pow(18) as i128, amount_in, amount_out)?;
         let price_impact = mid_price
             .checked_sub(execution_price)
             .ok_or(RaumFiLibraryError::Overflow)?
@@ -333,6 +333,7 @@ impl CheckedCeilingDiv for i128 {
             false // Return false if there's an error in calculation
         }
     }
+
 
 
 

@@ -115,7 +115,7 @@ fn test_quote() {
     let reserve_a: i128 = 1000;
     let reserve_b: i128 = 2000;
 
-    let amount_b =client.quote(&amount_a, &reserve_a, &reserve_b);
+    let amount_b =client.calculate_quote(&amount_a, &reserve_a, &reserve_b);
 
     assert_eq!(amount_b, 200);
 }
