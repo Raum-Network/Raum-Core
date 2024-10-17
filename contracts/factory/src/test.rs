@@ -86,6 +86,8 @@ fn test_create_pair() {
     // Check the pair is stored in the pair map
     let stored_pair = client.get_pair( &token_0.address, &token_1.address).unwrap();
     assert_eq!(stored_pair, pair);
+    let same_pair = client.get_pair( &token_1.address, &token_0.address).unwrap();
+    assert_eq!(stored_pair, same_pair);
 }
 
 #[test]

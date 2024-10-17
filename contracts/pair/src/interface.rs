@@ -26,6 +26,7 @@ pub trait RaumFiFactoryTrait {
 
     fn get_pair(e: Env, token_a: Address, token_b: Address) -> Result<Address, FactoryError>;
 
+    fn get_user_balance(e: Env, user_address: Address) -> Result<i128, FactoryError>;
 
     fn all_pairs(e: Env, n: u32) -> Result<Address, FactoryError>;
 

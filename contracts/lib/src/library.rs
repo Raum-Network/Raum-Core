@@ -108,7 +108,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate the maximum output amount of the other asset
-    pub fn get_amount_out(env: &Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn calculate_amount_out(env: &Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_in <= 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -128,7 +128,7 @@ impl CheckedCeilingDiv for i128 {
     }
 
     // Calculate the required input amount of the other asset
-    pub fn get_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
+    pub fn calculate_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError> {
         if amount_out <= 0 {
             return Err(RaumFiLibraryError::InsufficientAmount);
         }
@@ -174,7 +174,7 @@ impl CheckedCeilingDiv for i128 {
             let (reserve_in, reserve_out) =
                 get_reserves(env, factory.clone(), path.get(i).unwrap(), path.get(i + 1).unwrap())?;
             let amount_out =
-                get_amount_out(env, amounts.get(i).unwrap(), reserve_in, reserve_out)?;
+                calculate_amount_out(env, amounts.get(i).unwrap(), reserve_in, reserve_out)?;
             amounts.push_back(amount_out);
         }
         Ok(amounts)
@@ -196,7 +196,7 @@ impl CheckedCeilingDiv for i128 {
             let (reserve_in, reserve_out) =
                 get_reserves(env, factory.clone(), path.get(i - 1).unwrap(), path.get(i).unwrap())?;
             let amount_in =
-                get_amount_in(env, amounts.get(0).unwrap(), reserve_in, reserve_out)?;
+                calculate_amount_in(env, amounts.get(0).unwrap(), reserve_in, reserve_out)?;
             amounts.push_front(amount_in);
         }
         Ok(amounts)

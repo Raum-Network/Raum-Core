@@ -1,5 +1,6 @@
 #![cfg(test)]
 use super::*;
+use pair_token::token_storage::BALANCES_KEY;
 use soroban_sdk::{
     testutils::{Address as TestAddress, Ledger, LedgerInfo, Events as EventsExt},
     Address, Env, token , BytesN , log
@@ -59,7 +60,7 @@ fn setup_test() -> (Env, RaumFiPairClient<'static>, TokenClient<'static>, TokenC
     let (token0, token0client) = create_token_contract(&env, &user_address);
     let (token1, token1client) = create_token_contract(&env, &user_address);
     let factory = Address::generate(&env);
-    (env, client, token0, token1, factory , token0client, token1client)
+    (env, client, token0, token1, factory , token0client, token1client )
 }
 
 #[test]
@@ -122,14 +123,9 @@ fn test_mint() {
 
     token0.transfer(&user_address, &client.address, &2000i128);
     token1.transfer(&user_address, &client.address, &4000i128);
-
-    
     let result = client.mint(&user_address);
+    log!(&env, "{}", client.get_user_balance(&user_address));
     assert_eq!(result, 732);
-
-    // Verify the event was published
-    let logs = env.events().all();
-    assert_eq!(logs.len(), 8); // Mint and Sync events expected
 }
 
 

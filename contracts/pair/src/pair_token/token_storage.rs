@@ -1,4 +1,4 @@
-use soroban_sdk::{Address, Env, Symbol, symbol_short };
+use soroban_sdk::{Address, Env, Symbol, symbol_short , log};
 use soroban_token_sdk::{metadata::TokenMetadata, TokenUtils};
 
 pub const TOTAL_SUPPLY_KEY: Symbol = symbol_short!("totspply");
@@ -43,7 +43,7 @@ impl PairTokenStorage {
         }
         let new_balance = balance.checked_sub(amount)
         .expect("Integer overflow occurred");
-        e.storage().persistent().set(&("balances", to), &new_balance);
+        e.storage().instance().set(&(BALANCES_KEY, to), &new_balance);
         let total_supply = Self::get_total_supply(e);
         let new_total_supply = total_supply.checked_add(amount)
         .expect("Integer overflow occurred");
@@ -56,7 +56,8 @@ impl PairTokenStorage {
         }
         let new_balance = balance.checked_add(amount)
         .expect("Integer overflow occurred");
-        e.storage().persistent().set(&("balances", to), &new_balance);
+        e.storage().instance().set(&(BALANCES_KEY, to), &new_balance);
+        log!(&e, "new_balance: {}", e.storage().instance().get::<_, i128>(&(BALANCES_KEY, to)).unwrap());    
         let total_supply = Self::get_total_supply(e);
         let new_total_supply = total_supply.checked_sub(amount)
         .expect("Integer overflow occurred");

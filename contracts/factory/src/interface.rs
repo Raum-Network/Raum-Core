@@ -30,7 +30,8 @@ pub trait RaumFiFactoryInterface {
     /// Set the address that can change the fee recipient
     fn set_fee_to_setter(env: Env, fee_to_setter: Address);
 
-    fn create_new_pair(env: Env, token_a: Address, token_b: Address) -> Address;
+    fn create_new_pair(env: Env, token_a: Address, token_b: Address) -> Result<Address, RaumFiFactoryError>;
 
     fn pair_exists(env: Env, token0: Address, token1: Address) -> bool;
+
 }

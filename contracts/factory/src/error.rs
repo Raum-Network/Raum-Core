@@ -11,5 +11,6 @@ pub enum RaumFiFactoryError {
     InitializeAlreadyInitialized = 4,
     PairDoesNotExist = 5,
     IndexDoesNotExist = 6,
+    PairAlreadyExists = 7,
 }
 

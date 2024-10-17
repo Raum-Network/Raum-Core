@@ -6,6 +6,7 @@ use soroban_sdk::{
     contract, contractimpl, contractmeta, contracttype, log, token, Address, Env, Symbol, Vec
 };
 
+use crate::pair_token::token_storage::BALANCES_KEY;
 use crate::pair_token::{PairToken, PairTokenStorage};
 use num_integer::Roots; 
 use crate::error::RaumFiPairError;
@@ -60,9 +61,8 @@ contractmeta!(
     fn mint(env: Env, to: Address) -> Result<i128, RaumFiPairError >;
     fn mint_fee(env: Env, reserve0: i128, reserve1: i128) -> Result<bool, RaumFiPairError>;
     fn get_balance(env: Env, token_key: DataKey) -> i128;
+    fn get_user_balance(env: Env, user_address: Address) -> i128;
     fn check_locked(env: &Env) -> Result<(), RaumFiPairError>;
-
-    // New functions for swap and burn
     fn swap(env: Env, amount0_out: i128, amount1_out: i128, to: Address) -> Result<(), RaumFiPairError>;
     fn burn(env: Env, to: Address) -> Result<(i128, i128), RaumFiPairError>;
 }
@@ -76,7 +76,7 @@ impl RaumFiPairTrait for RaumFiPair {
         if env.storage().instance().has(&DataKey::Factory) {
             return Err(RaumFiPairError::AlreadyInitialized);
         }
-
+        
         env.storage().instance().set(&DataKey::Factory, &factory);
         env.storage().instance().set(&DataKey::Token0, &token0);
         env.storage().instance().set(&DataKey::Token1, &token1);
@@ -90,6 +90,11 @@ impl RaumFiPairTrait for RaumFiPair {
         let reserve1: i128 = env.storage().instance().get(&DataKey::Reserve1).unwrap_or(0);
         
         (reserve0, reserve1)
+    }
+
+    fn get_user_balance(env: Env, user_address: Address) -> i128 {
+        let balance = env.storage().instance().get::<_, i128>(&(&BALANCES_KEY, &user_address)).unwrap();
+        balance
     }
 
      fn mint(env: Env, to: Address) -> Result<i128, RaumFiPairError > {
@@ -116,11 +121,8 @@ impl RaumFiPairTrait for RaumFiPair {
         
         let liquidity = if total_supply == 0 {
             let initial_liquidity =(amount0.checked_mul(amount1).unwrap()).sqrt() - MINIMUM_LIQUIDITY;
-            match PairToken::mint_token(&env, env.current_contract_address().clone(), MINIMUM_LIQUIDITY) {
-                Ok(_) => {},
-                Err(_e) => return Err(RaumFiPairError::PairTokenError),
-            }
-            
+            PairToken::mint_token(&env, env.current_contract_address().clone(), MINIMUM_LIQUIDITY);
+
             initial_liquidity
         } else {
             let liquidity0 = (amount0.checked_mul(total_supply).unwrap()).checked_div(reserve0).unwrap();
@@ -134,14 +136,8 @@ impl RaumFiPairTrait for RaumFiPair {
         }
         
         
-        match PairToken::mint_token(&env, to.clone(), liquidity) {
-            Ok(_) => {},
-            Err(_e) => return Err(RaumFiPairError::PairTokenError),
-        }
-        // PairToken::mint(&env, to.clone(), liquidity)?;
+        PairToken::mint_token(&env, to.clone(), liquidity);
 
-        log!(&env, "liquidity: {}", liquidity);
-       
         update(&env, balance0, balance1)?;
 
         if fee_on {
@@ -176,10 +172,7 @@ impl RaumFiPairTrait for RaumFiPair {
                     let denominator = root_k.saturating_mul(5).saturating_add(root_k_last);
                     let liquidity = numerator.saturating_div(denominator);
                     if liquidity != 0 {
-                        match PairToken::mint_token(&env, fee_to.clone(), liquidity) {
-                            Ok(_) => {},
-                            Err(_e) => return Err(RaumFiPairError::PairTokenError),
-                        }
+                        PairToken::mint_token(&env, fee_to.clone(), liquidity);
                     }
                 }
             }
@@ -281,10 +274,7 @@ impl RaumFiPairTrait for RaumFiPair {
             return Err(RaumFiPairError::InsufficientLiquidityBurned);
         }
 
-        match PairToken::burn_token(&env, env.current_contract_address(), liquidity) {
-            Ok(_) => {},
-            Err(_) => return Err(RaumFiPairError::PairTokenError),
-        }
+        PairToken::burn_token(&env, env.current_contract_address(), liquidity);
 
         token::Client::new(&env, &token0).transfer(&env.current_contract_address(), &to, &amount0);
         token::Client::new(&env, &token1).transfer(&env.current_contract_address(), &to, &amount1);

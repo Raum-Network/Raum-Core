@@ -117,6 +117,7 @@ fn test_add_liquidity() {
         &deadline,
     );
 
+    let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
     assert!(amount_a >= amount_a_min);
     assert!(amount_b >= amount_b_min);
     assert!(liquidity > 0);
@@ -136,11 +137,14 @@ fn test_remove_liquidity() {
     token_c_client.mint(&admin, &1000000000000000);
     token_a_client.mint(&admin, &1000000000000000);
     token_b_client.mint(&admin, &1000000000000000);
+
+    
     
     let router = create_test_contract(&env);
     router.initialize(&factory.address, &token_c_client.address);
-
     // First, add some liquidity
+    
+
     let (deposit_a, deposit_b, liquidity) = router.add_liquidity(
         &token_a_client.address,
         &token_b_client.address,
@@ -151,18 +155,15 @@ fn test_remove_liquidity() {
         &admin,
         &1000000,
     );
-    log!(&env, "deposit_a: {}", deposit_a);
-    log!(&env, "deposit_b: {}", deposit_b);
-    log!(&env, "liquidity: {}", liquidity);
 
-    // Now remove the liquidity
+    let pair_client = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    
+    // // Now remove the liquidity
     let amount_a_min = 800;
     let amount_b_min = 400;
     let deadline = 2000000;
-    log!(&env, "liquidity: {}", liquidity);
-    log!(&env, "get_pair: {}", factory.get_pair(&token_a_client.address, &token_b_client.address));
-    log!(&env, "pair_exists: {}", factory.pair_exists(&token_a_client.address, &token_b_client.address));
-
+    log!(&env, "liquidity: {}", liquidity , &admin);
+    
     let (amount_a, amount_b) = router.remove_liquidity(
         &token_a_client.address,
         &token_b_client.address,
@@ -172,6 +173,9 @@ fn test_remove_liquidity() {
         &admin,
         &deadline,
     );
+    log!(&env, "liquidity: {}", pair_client.balance(&admin));
+    log!(&env, "amount_a: {}", amount_a);
+    log!(&env, "amount_b: {}", amount_b);
 
     assert!(amount_a >= amount_a_min);
     assert!(amount_b >= amount_b_min);

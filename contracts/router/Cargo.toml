@@ -12,11 +12,11 @@ doctest = false
 soroban-sdk = { version = "21.7.4" }
 soroban-token-sdk = { version = "21.7.4" }
 num-integer = { version = "0.1.45", default-features = false, features = ["i128"] }
-raumfi_library = "0.1.0"
+raumfi_library = "0.1.1"
 
 [dev-dependencies]
 soroban-sdk = { version = "21.7.4", features = ["testutils"] } 
-raumfi_library = "0.1.0"
+raumfi_library = "0.1.1"
 
 
 

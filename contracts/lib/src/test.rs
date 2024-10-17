@@ -135,7 +135,7 @@ fn test_get_amount_out() {
     let reserve_in: i128 = 100;
     let reserve_out: i128 = 100;
 
-    let amount_out = client.get_amount_out(&amount_in, &reserve_in, &reserve_out);
+    let amount_out = client.calculate_amount_out(&amount_in, &reserve_in, &reserve_out);
 
     assert_eq!(amount_out, 1);
 }
@@ -153,7 +153,7 @@ fn test_get_amount_in() {
     let amount_out: i128 = 1;
     let reserve_in: i128 = 100;
     let reserve_out: i128 = 100;
-    let amount_in = client.get_amount_in(&amount_out, &reserve_in, &reserve_out);
+    let amount_in = client.calculate_amount_in(&amount_out, &reserve_in, &reserve_out);
 
     assert_eq!(amount_in, 3);
 }

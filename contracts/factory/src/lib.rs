@@ -10,7 +10,7 @@ pub use crate::error::RaumFiFactoryError;
 use interface::RaumFiFactoryInterface;
 
 use soroban_sdk::{
-    contract, contracterror, contractimpl,contractimport ,contracttype, symbol_short, vec, xdr::ToXdr, Address, Bytes, BytesN, Env, IntoVal, Map, Symbol, Vec
+    contract, contracterror, contractimpl,contractimport ,contracttype, symbol_short, vec, xdr::ToXdr, Address, Bytes, BytesN, Env, IntoVal, Map, Symbol, Vec , log
 };
 
 mod pair {
@@ -68,6 +68,7 @@ pub trait RaumFiFactoryTrait {
     fn set_fee_to(env: Env, fee_to: Address);
     fn set_fee_to_setter(env: Env, fee_to_setter: Address);
     fn pair_exists(env: &Env, token0: &Address, token1: &Address) -> bool;
+    fn create_new_pair(env: Env, token_a: Address, token_b: Address) -> Result<Address, RaumFiFactoryError>;
 } 
 
 pub struct RaumFiV2Factory;
@@ -99,14 +100,14 @@ impl RaumFiFactoryInterface for FactoryContract  {
     fn get_pair(env: Env, token_a: Address, token_b: Address) -> Option<Address> {
         let (token0, token1) = sort_tokens(&token_a, &token_b);
         let key = DataKey::Pair(token0, token1);
-        env.storage().instance().get(&key)
+        log!(&env, "key: {}", key);
+        env.storage().persistent().get(&key)
     }
 
     fn pair_exists(env: Env, token0: Address, token1: Address) -> bool {
-        // Access storage directly without wrapping in a contract context
-        env.storage().persistent().has(&DataKey::Pair(token0.clone(), token1.clone()))
+        let (token0, token1) = sort_tokens(&token0, &token1);
+        env.storage().persistent().has(&DataKey::Pair(token0, token1))
     }
-    
 
     fn set_fee_to(env: Env, fee_to: Address) {
         let setter: Address = env.storage().persistent().get(&symbol_short!("feesetter")).unwrap();
@@ -124,33 +125,19 @@ impl RaumFiFactoryInterface for FactoryContract  {
         env.storage().persistent().set(&symbol_short!("feesetter"), &fee_to_setter);
     }
 
-    fn create_new_pair(env: Env, token_a: Address, token_b: Address) -> Address {
-        RaumFiV2Factory::create_pair(&env, &token_a, &token_b)
+    fn create_new_pair(env: Env, token_a: Address, token_b: Address) -> Result<Address, RaumFiFactoryError> {
+        let pair = RaumFiV2Factory::create_pair(&env, &token_a, &token_b)?;
+        Ok(pair)
     }
 }
 
 impl RaumFiV2Factory {
 
-    fn set_fee_to(env: &Env, fee_to: &Address) {
-        let setter: Address = env.storage().persistent().get(&symbol_short!("feesetter")).unwrap();
-        setter.require_auth();
-        env.storage().persistent().set(&symbol_short!("feeto"), fee_to);
-    }
 
-    fn set_fee_to_setter(env: &Env, fee_to_setter: &Address) {
-        let current_fee_to_setter: Address = env.storage().persistent().get(&symbol_short!("feesetter")).unwrap();
-        current_fee_to_setter.require_auth();
-        env.storage().persistent().set(&symbol_short!("feesetter"), fee_to_setter);
-    }
-
-    fn pair_exists(env: Env, token0: Address, token1: Address) -> bool {
-        // Access storage directly without wrapping in a contract context
-        env.storage().instance().has(&DataKey::Pair(token0.clone(), token1.clone()))
-    }
-
-    fn create_pair(env: &Env, token_a: &Address, token_b: &Address) -> Address {
+    fn create_pair(env: &Env, token_a: &Address, token_b: &Address) -> Result<Address, RaumFiFactoryError> {
+        
         if token_a == token_b {
-            panic!("{}", Error::IdenticalAddresses as u32);
+            return Err(RaumFiFactoryError::CreatePairIdenticalTokens);
         }
         let (token0, token1) = if token_a < token_b {
             (token_a, token_b)
@@ -159,14 +146,16 @@ impl RaumFiV2Factory {
         };
        
         let key = DataKey::Pair(token0.clone(), token1.clone());
-        let pair_exists = if env.storage().instance().has(&key) {
+        log!(&env, "key: {}", key);
+        let pair_exists = if env.storage().persistent().has(&key) {
             true
         } else {
             false
         };
 
+        log!(&env, "pair_exists: {}", pair_exists);
         if pair_exists == true {
-            panic!("{}", Error::PairExists as u32);
+            return Err(RaumFiFactoryError::PairAlreadyExists);
         }
 
         // Create pair contract
@@ -177,7 +166,6 @@ impl RaumFiV2Factory {
         let pair_wasm_hash: BytesN<32> = env.storage().persistent().get(&symbol_short!("pair_hash"))
         .unwrap();
         let pair: Address = env.deployer().with_current_contract(salt).deploy(pair_wasm_hash);
-        // Initialize pair
         PairClient::new(&env, &pair).initialize(
            
             &token0, 
@@ -187,16 +175,11 @@ impl RaumFiV2Factory {
 
         let topics = (Symbol::new(env, "pairmade"), token_a.clone(), token_b.clone());
         env.events().publish(topics, pair.clone());
-        env.storage().instance().set(&DataKey::Pair(token_a.clone(), token_b.clone()), &pair);
+        env.storage().persistent().set(&DataKey::Pair(token_a.clone(), token_b.clone()), &pair);
         let current_pairs = env.storage().persistent().get(&symbol_short!("pairs")).unwrap_or(0u32);
         env.storage().persistent().set(&symbol_short!("pairs"), &(current_pairs + 1));
 
-        pair
+        Ok(pair)
     }
 
-    // fn get_pair(env: &Env, token_a: &Address, token_b: &Address) -> Option<Address> {
-    //     let (token0, token1) = sort_tokens(&token_a, &token_b);
-    //     let key = DataKey::Pair(token0, token1);
-    //     env.storage().instance().get(&key)
-    // }
 }

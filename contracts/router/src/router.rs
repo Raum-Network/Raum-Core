@@ -56,12 +56,10 @@ impl RaumFiRouter {
         amount_b_min: i128,
     ) -> (i128, i128) {
         let factory = Self::factory(env);
-        log!(&env, "factory: {}", factory);
         let factory_client = FactoryClient::new(env, &factory);
-        if !factory_client.pair_exists(token_a, token_b) {
+        if factory_client.get_pair(token_a, token_b).is_none() {
             factory_client.create_new_pair(token_a, token_b);
         }
-        
         let (token_0, token_1) = crate::helper::sort_tokens(token_a.clone(), token_b.clone()).unwrap();
         let pair = factory_client.get_pair(&token_0, &token_1).unwrap();
         let pair_client = PairClient::new(env, &pair);
@@ -69,14 +67,14 @@ impl RaumFiRouter {
         if reserve_a == 0 && reserve_b == 0 {
             (amount_a_desired, amount_b_desired)
         } else {
-            let amount_b_optimal =  RaumFiV2Library::quote(env, amount_a_desired, reserve_a, reserve_b).unwrap();
+            let amount_b_optimal =  RaumFiV2Library::calculate_quote(env, amount_a_desired, reserve_a, reserve_b).unwrap();
             if amount_b_optimal <= amount_b_desired {
                 if amount_b_optimal < amount_b_min {
                     panic!("RaumFiRouter: INSUFFICIENT_B_AMOUNT");
                 }
                 (amount_a_desired, amount_b_optimal)
             } else {
-                let amount_a_optimal = RaumFiV2Library::quote(env , amount_b_desired, reserve_b, reserve_a).unwrap();
+                let amount_a_optimal = RaumFiV2Library::calculate_quote(env , amount_b_desired, reserve_b, reserve_a).unwrap();
                 assert!(amount_a_optimal <= amount_a_desired);
                 if amount_a_optimal < amount_a_min {
                     panic!("RaumFiRouter: INSUFFICIENT_A_AMOUNT");
@@ -131,12 +129,15 @@ impl RaumFiRouter {
         Self::ensure(&env, deadline);
         to.require_auth();
         let factory_client = FactoryClient::new(&env, &Self::factory(&env));
-        if !factory_client.pair_exists(&token_a, &token_b) {
+        
+        if factory_client.get_pair(&token_a, &token_b).is_none() {
             panic!("RaumFiRouter: PAIR_DOES_NOT_EXIST");
         }
-        let pair = crate::helper::pair_for(env.clone(), factory_client.address, token_a.clone(), token_b.clone()).unwrap();
-        TokenClient::new(&env, &pair).transfer(&to, &pair, &liquidity);
-        let (amount0, amount1) = PairClient::new(&env, &pair).burn(&to);
+        
+        let pair = crate::helper::pair_for(env.clone(), Self::factory(&env).clone(), token_a.clone(), token_b.clone()).unwrap();
+        let pair_client = PairClient::new(&env, &pair);
+        pair_client.transfer(&to , &pair, &liquidity);
+        let (amount0, amount1) = pair_client.burn(&to);
         let (token0, _) = crate::helper::sort_tokens(token_a.clone(), token_b.clone()).unwrap();
         let (amount_a, amount_b) = if token_a == token0 {
             (amount0, amount1)
@@ -153,7 +154,7 @@ impl RaumFiRouter {
     }
 
     pub fn quote(env: Env, amount_a: i128, reserve_a: i128, reserve_b: i128) -> i128 {
-        let quote = RaumFiV2Library::quote(&env, amount_a, reserve_a, reserve_b).unwrap();
+        let quote = RaumFiV2Library::calculate_quote(&env, amount_a, reserve_a, reserve_b).unwrap();
         log!(&env, "quote: {}", quote);
         quote
     }

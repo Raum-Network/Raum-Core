@@ -54,7 +54,7 @@ impl PairToken {
     fn do_transfer(e: &Env, from: &Address, to: &Address, amount: i128) -> bool {
         let from_balance = Self::balance(e.clone(), from.clone());
         if from_balance < amount {
-            return false;
+            panic!("from_balance cannot be less than amount -> : {}", amount);
         }
         PairTokenStorage::set_balance(e, from, from_balance - amount);
         let to_balance = Self::balance(e.clone(), to.clone());
