@@ -3574,12 +3574,10 @@
                 "bytes": "7a1dd59eb49ba06bb2dc703bf1a531a6f4bc0117354c8cfcdfd0023457036b54"
               },
               {
-                "symbol": "balance"
+                "symbol": "get_reserves"
               }
             ],
-            "data": {
-              "address": "CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM"
-            }
+            "data": "void"
           }
         }
       },
@@ -3597,14 +3595,24 @@
                 "symbol": "fn_return"
               },
               {
-                "symbol": "balance"
+                "symbol": "get_reserves"
               }
             ],
             "data": {
-              "i128": {
-                "hi": 0,
-                "lo": 0
-              }
+              "vec": [
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 10000
+                  }
+                },
+                {
+                  "i128": {
+                    "hi": 0,
+                    "lo": 5000
+                  }
+                }
+              ]
             }
           }
         }
@@ -3626,13 +3634,23 @@
             "data": {
               "vec": [
                 {
-                  "string": "liquidity: {}"
+                  "string": "balance_a: {}"
                 },
                 {
-                  "i128": {
-                    "hi": 0,
-                    "lo": 0
-                  }
+                  "vec": [
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 10000
+                      }
+                    },
+                    {
+                      "i128": {
+                        "hi": 0,
+                        "lo": 5000
+                      }
+                    }
+                  ]
                 }
               ]
             }

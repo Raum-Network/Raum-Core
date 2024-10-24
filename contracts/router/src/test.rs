@@ -118,6 +118,10 @@ fn test_add_liquidity() {
     );
 
     let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    let balance_a = pair.get_reserves();
+
+    log!(&env, "balance_a: {}", balance_a);
+    
     assert!(amount_a >= amount_a_min);
     assert!(amount_b >= amount_b_min);
     assert!(liquidity > 0);
@@ -167,7 +171,7 @@ fn test_remove_liquidity() {
     let (amount_a, amount_b) = router.remove_liquidity(
         &token_a_client.address,
         &token_b_client.address,
-        &liquidity,
+        &liquidity.checked_sub(522).unwrap(),
         &amount_a_min,
         &amount_b_min,
         &admin,

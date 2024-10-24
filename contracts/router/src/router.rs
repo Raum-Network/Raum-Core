@@ -160,11 +160,11 @@ impl RaumFiRouter {
     }
 
     pub fn get_amount_out(env: Env, amount_in: i128, reserve_in: i128, reserve_out: i128) -> i128 {
-        RaumFiV2Library::get_amount_out(&env, amount_in, reserve_in, reserve_out).unwrap()
+        RaumFiV2Library::calculate_amount_out(&env, amount_in, reserve_in, reserve_out).unwrap()
     }
 
     pub fn get_amount_in(env: Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> i128 {
-        RaumFiV2Library::get_amount_in(&env, amount_out, reserve_in, reserve_out).unwrap()
+        RaumFiV2Library::calculate_amount_in(&env, amount_out, reserve_in, reserve_out).unwrap()
     }
 
     pub fn get_amounts_out(env: Env, amount_in: i128, path: Vec<Address>) -> Vec<i128> {
