@@ -122,7 +122,6 @@ impl RaumFiPairTrait for RaumFiPair {
         let liquidity = if total_supply == 0 {
             let initial_liquidity =(amount0.checked_mul(amount1).unwrap()).sqrt() - MINIMUM_LIQUIDITY;
             PairToken::mint_token(&env, env.current_contract_address().clone(), MINIMUM_LIQUIDITY);
-
             initial_liquidity
         } else {
             let liquidity0 = (amount0.checked_mul(total_supply).unwrap()).checked_div(reserve0).unwrap();

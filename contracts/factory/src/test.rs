@@ -7,13 +7,13 @@ use token::StellarAssetClient as TokenAdminClient;
 
 fn pair_token_wasm(e: &Env) -> BytesN<32> {
     soroban_sdk::contractimport!(
-        file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/pair.wasm"
+        file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
     );
     e.deployer().upload_contract_wasm(WASM)
 }
 
 pub mod pair {
-    soroban_sdk::contractimport!(file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/pair.wasm");
+    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
     pub type PairClient<'a> = Client<'a>;
 }
 use pair::{PairClient, WASM};

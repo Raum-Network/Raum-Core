@@ -13,22 +13,21 @@ pub struct PairToken;
 #[contractimpl]
 impl PairToken {
 
-    pub fn mint_token(env: &Env, to: Address, amount: i128) -> Result<(), PairTokenError> {
+    pub fn mint_token(env: &Env, to: Address, amount: i128)  {
         if amount <= 0 {
-            return Err(PairTokenError::InvalidAmount);
+            panic!("amount must be greater than 0 -> : {}", amount);
         }
         let balance = Self::balance(env.clone(), to.clone());
         PairTokenStorage::mint_logic(env, &to, amount, balance);
-        Ok(())
+        
     }
     
-    pub fn burn_token(env: &Env, from: Address, amount: i128) -> Result<(), PairTokenError> {
+    pub fn burn_token(env: &Env, from: Address, amount: i128) {
         if amount < 0 {
             panic!("amount cannot be less than 0 -> : {}", amount)
         }
         let balance = Self::balance(env.clone(), from.clone());
         PairTokenStorage::burn_logic(env, &from, amount, balance);
-        Ok(())
     }
 
     pub fn balance(e: Env, id: Address) -> i128 {

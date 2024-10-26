@@ -21,19 +21,19 @@ fn create_token_contract<'a>(e: &Env, admin: &Address) -> (TokenClient<'a>, Toke
 
 fn pair_token_wasm(e: &Env) -> BytesN<32> {
     soroban_sdk::contractimport!(
-        file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/pair.wasm"
+        file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
     );
     e.deployer().upload_contract_wasm(WASM)
 }
 
 pub mod pair {
-    soroban_sdk::contractimport!(file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/pair.wasm");
+    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
     pub type PairClient<'a> = Client<'a>;
 }
 use pair::PairClient;
 
 pub mod factory {
-    soroban_sdk::contractimport!(file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/raumfi_factory.wasm");
+    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/raumfi_factory.wasm");
     pub type FactoryClient<'a> = Client<'a>;
 }
 use factory::FactoryClient;
@@ -45,9 +45,6 @@ fn create_factory_contract<'a>(e: & Env, setter: & Address,pair_wasm_hash: & Byt
     factory
 }
 
-
-
-use crate::error::RaumFiPairError;
 
 fn setup_test() -> (Env, RaumFiPairClient<'static>, TokenClient<'static>, TokenClient<'static>, Address , TokenAdminClient<'static>, TokenAdminClient<'static>) {
     let env = Env::default();

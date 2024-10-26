@@ -14,7 +14,7 @@ use soroban_sdk::{
 };
 
 mod pair {
-    soroban_sdk::contractimport!(file = "D:/RaumFiV2/RaumFiV2/target/wasm32-unknown-unknown/release/pair.wasm");
+    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
     pub type PairClient<'a> = Client<'a>;
 }
 
