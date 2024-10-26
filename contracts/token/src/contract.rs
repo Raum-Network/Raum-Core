@@ -92,7 +92,6 @@ impl token::Interface for Token {
 
     fn transfer(e: Env, from: Address, to: Address, amount: i128) {
         from.require_auth();
-
         check_nonnegative_amount(&e, amount);
 
         bump_instance(&e);

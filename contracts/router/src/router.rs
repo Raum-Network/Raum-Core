@@ -1,5 +1,3 @@
-use core::clone;
-
 use raumfi_library::RaumFiV2Library;
 use soroban_sdk::{
     contract, contractimpl, Address, Env,  Symbol, Vec,
@@ -8,10 +6,9 @@ use soroban_sdk::{
 use raumfi_library::*;
 
 use crate::factory_client::FactoryClient;
-use crate::helper::*;
 
 soroban_sdk::contractimport!(
-    file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
+    file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
 );
 pub type PairClient<'a> = Client<'a>;
 
@@ -32,7 +29,7 @@ impl RaumFiRouter {
         env.storage().instance().get(&FACTORY).unwrap()
     }
 
-    fn native(env: &Env) -> Address {
+    pub fn native(env: &Env) -> Address {
         env.storage().instance().get(&NATIVE).unwrap()
     }
 
@@ -40,10 +37,6 @@ impl RaumFiRouter {
         if env.ledger().timestamp() > deadline {
             panic!("RaumFiRouter: Deadline Expired");
         }
-    }
-
-    fn get_native(env: &Env) -> Address {
-        env.storage().instance().get(&NATIVE).unwrap()
     }
 
     fn _add_liquidity(
@@ -136,14 +129,18 @@ impl RaumFiRouter {
         
         let pair = crate::helper::pair_for(env.clone(), Self::factory(&env).clone(), token_a.clone(), token_b.clone()).unwrap();
         let pair_client = PairClient::new(&env, &pair);
+        log!(&env , "hue lya transfer?" , pair_client.get_user_balance(&pair));
         pair_client.transfer(&to , &pair, &liquidity);
+        log!(&env , "hue lya transfer?" , pair_client.get_user_balance(&pair));
         let (amount0, amount1) = pair_client.burn(&to);
+        log!(&env , "amounts?", amount0 , amount1);
         let (token0, _) = crate::helper::sort_tokens(token_a.clone(), token_b.clone()).unwrap();
         let (amount_a, amount_b) = if token_a == token0 {
             (amount0, amount1)
         } else {
             (amount1, amount0)
         };
+
         if amount_a < amount_a_min {
             panic!("RaumFiRouter: INSUFFICIENT_A_AMOUNT");
         }

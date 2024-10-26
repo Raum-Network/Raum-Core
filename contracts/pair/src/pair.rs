@@ -259,13 +259,17 @@ impl RaumFiPairTrait for RaumFiPair {
         let token0: Address = env.storage().instance().get(&DataKey::Token0).unwrap();
         let token1: Address = env.storage().instance().get(&DataKey::Token1).unwrap();
         let (reserve0, reserve1) = Self::get_reserves(env.clone());
-
         let balance0 = Self::get_balance(env.clone(), DataKey::Token0);
         let balance1 = Self::get_balance(env.clone(), DataKey::Token1);
+        // 10000 5000
         let liquidity = PairTokenStorage::get_balance(&env, &env.current_contract_address());
-
+        // 1000
+        log!(&env , "inside burn" , liquidity);
         let userbalance = liquidity.checked_sub(MINIMUM_LIQUIDITY).unwrap();
+        // 6071
+        log!(&env , "inside burn user balance" , userbalance);
         let total_supply = PairTokenStorage::get_total_supply(&env);
+        log!(&env , "total supply " , total_supply);
         let amount0 = balance0.checked_mul(userbalance).unwrap().checked_div(total_supply).unwrap();
         let amount1 = balance1.checked_mul(userbalance).unwrap().checked_div(total_supply).unwrap();
 

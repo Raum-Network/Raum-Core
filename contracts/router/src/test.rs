@@ -117,9 +117,11 @@ fn test_add_liquidity() {
         &deadline,
     );
 
+    log!(&env , "liq" , liquidity);
     let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
     let balance_a = pair.get_reserves();
-
+    let balanceuser = pair.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser);
     log!(&env, "balance_a: {}", balance_a);
     
     assert!(amount_a >= amount_a_min);
@@ -161,23 +163,25 @@ fn test_remove_liquidity() {
     );
 
     let pair_client = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
-    
+    let balanceuser = pair_client.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser , deposit_a , deposit_b);
+
     // // Now remove the liquidity
-    let amount_a_min = 800;
-    let amount_b_min = 400;
+    let amount_a_min = 7171;
+    let amount_b_min = 3585;
     let deadline = 2000000;
     log!(&env, "liquidity: {}", liquidity , &admin);
     
     let (amount_a, amount_b) = router.remove_liquidity(
         &token_a_client.address,
         &token_b_client.address,
-        &liquidity.checked_sub(522).unwrap(),
+        &liquidity.checked_sub(1000).unwrap(),
         &amount_a_min,
         &amount_b_min,
         &admin,
         &deadline,
     );
-    log!(&env, "liquidity: {}", pair_client.balance(&admin));
+    log!(&env, "liquidity: {}", pair_client.get_user_balance(&admin));
     log!(&env, "amount_a: {}", amount_a);
     log!(&env, "amount_b: {}", amount_b);
 
@@ -185,105 +189,253 @@ fn test_remove_liquidity() {
     assert!(amount_b >= amount_b_min);
 }
 
-// #[test]
-// fn test_swap_exact_tokens_for_tokens() {
-//     let env = Env::default();
-//     let admin = Address::random(&env);
+#[test]
+fn test_swap_exact_tokens_for_tokens() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let pair_wasm_hash = pair_token_wasm(&env);
+    let factory = create_factory_contract(&env, &admin, &pair_wasm_hash);
     
-//     let token_in = create_token_contract(&env, &admin);
-//     let token_out = create_token_contract(&env, &admin);
+    let (token_a, token_a_client)  = create_token_contract(&env, &admin);
+    let (token_b, token_b_client)  = create_token_contract(&env, &admin);
+    let (token_c, token_c_client)  = create_token_contract(&env, &admin);
+    token_c_client.mint(&admin, &1000000000000000);
+    token_a_client.mint(&admin, &1000000000000000);
+    token_b_client.mint(&admin, &1000000000000000);
+
     
-//     let router = create_router(&env);
-//     let client = crate::router::Client::new(&env, &router);
-
-//     let amount_in = 100;
-//     let amount_out_min = 80;
-//     let path = vec![&env, token_in.clone(), token_out.clone()];
-//     let to = Address::random(&env);
-//     let deadline = 1000000;
-
-//     let amounts = client.swap_exact_tokens_for_tokens(
-//         &amount_in,
-//         &amount_out_min,
-//         &path,
-//         &to,
-//         &deadline,
-//     );
-
-//     assert_eq!(amounts.len(), 2);
-//     assert_eq!(amounts.get(0).unwrap(), amount_in);
-//     assert!(amounts.get(1).unwrap() >= amount_out_min);
-// }
-
-// #[test]
-// fn test_swap_tokens_for_exact_tokens() {
-//     let env = Env::default();
-//     let admin = Address::random(&env);
     
-//     let token_in = create_token_contract(&env, &admin);
-//     let token_out = create_token_contract(&env, &admin);
+    let router = create_test_contract(&env);
+    router.initialize(&factory.address, &token_c_client.address);
+    let amount_a_desired = 10000;
+    let amount_b_desired = 5000;
+    let amount_a_min = 9000;
+    let amount_b_min = 4500;
+    let deadline = 1000000;
+    log!(&env, "token_a_client.address: {}", token_a_client.address , token_b_client.address , factory.address , router.address );
+    let (amount_a, amount_b, liquidity) = router.add_liquidity(
+        &token_a_client.address,
+        &token_b_client.address,
+        &amount_a_desired,
+        &amount_b_desired,
+        &amount_a_min,
+        &amount_b_min,
+        &admin,
+        &deadline,
+    );
+
+    log!(&env , "liq" , liquidity);
+    let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    let balance_a = pair.get_reserves();
+    let balanceuser = pair.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser);
+    log!(&env, "balance_a: {}", balance_a);
     
-//     let router = create_router(&env);
-//     let client = crate::router::Client::new(&env, &router);
+    let amount_in = 100;
+    let amount_out_min = 49;
+    let path = vec![&env, token_a_client.address, token_b_client.address];
+    let deadline = 1000000;
+    // let amount_out_min = router.get_amounts_out( &amount_in , &path );
+    // log!(&env , "amount_out_min" , amount_out_min);
+    let amounts = router.swap_exact_tokens_for_tokens(
+        &amount_in,
+        &amount_out_min,
+        &path,
+        &admin,
+        &deadline,
+    );
 
-//     let amount_out = 80;
-//     let amount_in_max = 110;
-//     let path = vec![&env, token_in.clone(), token_out.clone()];
-//     let to = Address::random(&env);
-//     let deadline = 1000000;
+    assert_eq!(amounts.len(), 2);
+    assert_eq!(amounts.get(0).unwrap(), amount_in);
+    assert!(amounts.get(1).unwrap() >= amount_out_min);
+    log!(&env , "amount out 50?" , amounts.get(1).unwrap())
+}
 
-//     let amounts = client.swap_tokens_for_exact_tokens(
-//         &amount_out,
-//         &amount_in_max,
-//         &path,
-//         &to,
-//         &deadline,
-//     );
-
-//     assert_eq!(amounts.len(), 2);
-//     assert!(amounts.get(0).unwrap() <= amount_in_max);
-//     assert_eq!(amounts.get(1).unwrap(), amount_out);
-// }
-
-// #[test]
-// fn test_get_amounts_out() {
-//     let env = Env::default();
-//     let admin = Address::random(&env);
+#[test]
+fn test_swap_tokens_for_exact_tokens() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let pair_wasm_hash = pair_token_wasm(&env);
+    let factory = create_factory_contract(&env, &admin, &pair_wasm_hash);
     
-//     let token_a = create_token_contract(&env, &admin);
-//     let token_b = create_token_contract(&env, &admin);
+    let (token_a, token_a_client)  = create_token_contract(&env, &admin);
+    let (token_b, token_b_client)  = create_token_contract(&env, &admin);
+    let (token_c, token_c_client)  = create_token_contract(&env, &admin);
+    token_c_client.mint(&admin, &1000000000000000);
+    token_a_client.mint(&admin, &1000000000000000);
+    token_b_client.mint(&admin, &1000000000000000);
+
     
-//     let router = create_router(&env);
-//     let client = crate::router::Client::new(&env, &router);
-
-//     let amount_in = 100;
-//     let path = vec![&env, token_a.clone(), token_b.clone()];
-
-//     let amounts = client.get_amounts_out(&amount_in, &path);
-
-//     assert_eq!(amounts.len(), 2);
-//     assert_eq!(amounts.get(0).unwrap(), amount_in);
-//     assert!(amounts.get(1).unwrap() > 0);
-// }
-
-// #[test]
-// fn test_get_amounts_in() {
-//     let env = Env::default();
-//     let admin = Address::random(&env);
     
-//     let token_a = create_token_contract(&env, &admin);
-//     let token_b = create_token_contract(&env, &admin);
+    let router = create_test_contract(&env);
+    router.initialize(&factory.address, &token_c_client.address);
+    let amount_a_desired = 10000;
+    let amount_b_desired = 5000;
+    let amount_a_min = 9000;
+    let amount_b_min = 4500;
+    let deadline = 1000000;
+    log!(&env, "token_a_client.address: {}", token_a_client.address , token_b_client.address , factory.address , router.address );
+    let (amount_a, amount_b, liquidity) = router.add_liquidity(
+        &token_a_client.address,
+        &token_b_client.address,
+        &amount_a_desired,
+        &amount_b_desired,
+        &amount_a_min,
+        &amount_b_min,
+        &admin,
+        &deadline,
+    );
+
+    log!(&env , "liq" , liquidity);
+    let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    let balance_a = pair.get_reserves();
+    let balanceuser = pair.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser);
+    log!(&env, "balance_a: {}", balance_a);
+
+    let amount_out = 80;
+    let amount_in_max = 170;
+    let path = vec![&env, token_a_client.address, token_b_client.address];
+    let deadline = 1000000;
+
+    let amounts = router.swap_tokens_for_exact_tokens(
+        &amount_out,
+        &amount_in_max,
+        &path,
+        &admin,
+        &deadline,
+    );
+
+    assert_eq!(amounts.len(), 2);
+    assert!(amounts.get(0).unwrap() <= amount_in_max);
+    assert_eq!(amounts.get(1).unwrap(), amount_out);
+}
+
+#[test]
+fn test_get_amounts_out() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let pair_wasm_hash = pair_token_wasm(&env);
+    let factory = create_factory_contract(&env, &admin, &pair_wasm_hash);
     
-//     let router = create_router(&env);
-//     let client = crate::router::Client::new(&env, &router);
+    let (token_a, token_a_client)  = create_token_contract(&env, &admin);
+    let (token_b, token_b_client)  = create_token_contract(&env, &admin);
+    let (token_c, token_c_client)  = create_token_contract(&env, &admin);
+    token_c_client.mint(&admin, &1000000000000000);
+    token_a_client.mint(&admin, &1000000000000000);
+    token_b_client.mint(&admin, &1000000000000000);
 
-//     let amount_out = 80;
-//     let path = vec![&env, token_a.clone(), token_b.clone()];
+    
+    
+    let router = create_test_contract(&env);
+    router.initialize(&factory.address, &token_c_client.address);
+    let amount_a_desired = 10000;
+    let amount_b_desired = 5000;
+    let amount_a_min = 9000;
+    let amount_b_min = 4500;
+    let deadline = 1000000;
+    log!(&env, "token_a_client.address: {}", token_a_client.address , token_b_client.address , factory.address , router.address );
+    let (amount_a, amount_b, liquidity) = router.add_liquidity(
+        &token_a_client.address,
+        &token_b_client.address,
+        &amount_a_desired,
+        &amount_b_desired,
+        &amount_a_min,
+        &amount_b_min,
+        &admin,
+        &deadline,
+    );
 
-//     let amounts = client.get_amounts_in(&amount_out, &path);
+    log!(&env , "liq" , liquidity);
+    let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    let balance_a = pair.get_reserves();
+    let balanceuser = pair.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser);
+    log!(&env, "balance_a: {}", balance_a);
+    let amount_in = 100;
+    let path = vec![&env, token_a_client.address, token_b_client.address];
 
-//     assert_eq!(amounts.len(), 2);
-//     assert!(amounts.get(0).unwrap() > 0);
-//     assert_eq!(amounts.get(1).unwrap(), amount_out);
-// }
+    let amounts = router.get_amounts_out(&amount_in, &path);
 
+    assert_eq!(amounts.len(), 2);
+    assert_eq!(amounts.get(0).unwrap(), amount_in);
+    assert!(amounts.get(1).unwrap() > 0);
+}
+
+#[test]
+fn test_get_amounts_in() {
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let pair_wasm_hash = pair_token_wasm(&env);
+    let factory = create_factory_contract(&env, &admin, &pair_wasm_hash);
+    
+    let (token_a, token_a_client)  = create_token_contract(&env, &admin);
+    let (token_b, token_b_client)  = create_token_contract(&env, &admin);
+    let (token_c, token_c_client)  = create_token_contract(&env, &admin);
+    token_c_client.mint(&admin, &1000000000000000);
+    token_a_client.mint(&admin, &1000000000000000);
+    token_b_client.mint(&admin, &1000000000000000);
+
+    
+    
+    let router = create_test_contract(&env);
+    router.initialize(&factory.address, &token_c_client.address);
+    let amount_a_desired = 10000;
+    let amount_b_desired = 5000;
+    let amount_a_min = 9000;
+    let amount_b_min = 4500;
+    let deadline = 1000000;
+    log!(&env, "token_a_client.address: {}", token_a_client.address , token_b_client.address , factory.address , router.address );
+    let (amount_a, amount_b, liquidity) = router.add_liquidity(
+        &token_a_client.address,
+        &token_b_client.address,
+        &amount_a_desired,
+        &amount_b_desired,
+        &amount_a_min,
+        &amount_b_min,
+        &admin,
+        &deadline,
+    );
+
+    log!(&env , "liq" , liquidity);
+    let pair = PairClient::new(&env, &factory.get_pair(&token_a_client.address, &token_b_client.address).unwrap());
+    let balance_a = pair.get_reserves();
+    let balanceuser = pair.get_user_balance(&admin);
+    log!(&env , "user_balance?" , balanceuser);
+    log!(&env, "balance_a: {}", balance_a);
+
+    let amount_out = 80;
+    let path = vec![&env, token_a_client.address, token_b_client.address];
+
+    let amounts = router.get_amounts_in(&amount_out, &path);
+
+    assert_eq!(amounts.len(), 2);
+    assert!(amounts.get(0).unwrap() > 0);
+    assert_eq!(amounts.get(1).unwrap(), amount_out);
+}
+
+#[test]
+fn get_native_test(){
+    let env = Env::default();
+    env.mock_all_auths();
+    let admin = Address::generate(&env);
+    let pair_wasm_hash = pair_token_wasm(&env);
+    let factory = create_factory_contract(&env, &admin, &pair_wasm_hash);
+    
+    let (token_a, token_a_client)  = create_token_contract(&env, &admin);
+    let (token_b, token_b_client)  = create_token_contract(&env, &admin);
+    let (token_c, token_c_client)  = create_token_contract(&env, &admin);
+    token_c_client.mint(&admin, &1000000000000000);
+    token_a_client.mint(&admin, &1000000000000000);
+    token_b_client.mint(&admin, &1000000000000000);
+
+    
+    
+    let router = create_test_contract(&env);
+    router.initialize(&factory.address, &token_c_client.address);
+    assert_eq!(token_c_client.address , router.native())
+}

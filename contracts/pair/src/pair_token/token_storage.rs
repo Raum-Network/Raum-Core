@@ -45,7 +45,7 @@ impl PairTokenStorage {
         .expect("Integer overflow occurred");
         e.storage().instance().set(&(BALANCES_KEY, to), &new_balance);
         let total_supply = Self::get_total_supply(e);
-        let new_total_supply = total_supply.checked_add(amount)
+        let new_total_supply = total_supply.checked_sub(amount)
         .expect("Integer overflow occurred");
         Self::set_total_supply(e, new_total_supply);
     }
@@ -59,7 +59,7 @@ impl PairTokenStorage {
         e.storage().instance().set(&(BALANCES_KEY, to), &new_balance);
         log!(&e, "new_balance: {}", e.storage().instance().get::<_, i128>(&(BALANCES_KEY, to)).unwrap());    
         let total_supply = Self::get_total_supply(e);
-        let new_total_supply = total_supply.checked_sub(amount)
+        let new_total_supply = total_supply.checked_add(amount)
         .expect("Integer overflow occurred");
         Self::set_total_supply(e, new_total_supply);
     }
