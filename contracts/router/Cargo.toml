@@ -1,22 +1,36 @@
 [package]
 name = "router"
-version = "0.0.0"
+version = "0.0.1"
 edition = "2021"
 publish = false
 
 [lib]
-crate-type = ["cdylib" , "rlib"]
+crate-type = ["cdylib"]
 doctest = false
 
 [dependencies]
-soroban-sdk = { version = "21.7.4" }
-soroban-token-sdk = { version = "21.7.4" }
+soroban-sdk = { version = "20.2.0" }
+soroban-token-sdk = { version = "20.2.0" }
 num-integer = { version = "0.1.45", default-features = false, features = ["i128"] }
-raumfi_library = "0.1.3"
+raumfi_library = "0.1.4"
 
 [dev-dependencies]
-soroban-sdk = { version = "21.7.4", features = ["testutils"] } 
-raumfi_library = "0.1.3"
+soroban-sdk = { version = "20.2.0", features = ["testutils"] } 
+raumfi_library = "0.1.4"
+
+[profile.release]
+opt-level = "z"
+overflow-checks = true
+debug = 1
+strip = "symbols"
+debug-assertions = false
+panic = "abort"
+codegen-units = 1
+lto = true
+
+[profile.release-with-logs]
+inherits = "release"
+debug-assertions = true
 
 
 

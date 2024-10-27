@@ -5,8 +5,8 @@ fn pair_salt(e: &Env, token_a: Address, token_b: Address) -> BytesN<32> {
     let mut salt = Bytes::new(e);
 
     // Append the bytes of token_a and token_b to the salt
-    salt.append(&token_a.clone().to_xdr(e)); // can be simplified to salt.append(&self.clone().to_xdr(e)); but changes the hash
-    salt.append(&token_b.clone().to_xdr(e));
+    salt.append(&token_a.to_xdr(e)); 
+    salt.append(&token_b.to_xdr(e));
 
     // Hash the salt using SHA256 to generate a new BytesN<32> value
     e.crypto().sha256(&salt).into()

@@ -16,12 +16,12 @@ publish = true
 crate-type = ["cdylib" , "rlib"]
 
 [dependencies]
-soroban-sdk = { version = "21.7.4" }
+soroban-sdk = { version = "20.2.0" }
 num-integer = { version = "0.1.45", default-features = false, features = ["i128"] }
 
 
 [dev-dependencies]
-soroban-sdk = { version = "21.7.4", features = ["testutils"] }
+soroban-sdk = { version = "20.2.0", features = ["testutils"] }
 
 [profile.release]
 opt-level = "z"

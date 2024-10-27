@@ -165,11 +165,11 @@ impl RaumFiRouter {
     }
 
     pub fn get_amounts_out(env: Env, amount_in: i128, path: Vec<Address>) -> Vec<i128> {
-        RaumFiV2Library::get_amounts_out(&env, Self::factory(&env), amount_in, path).unwrap()
+        RaumFiV2Library::get_amounts_out_path(&env, Self::factory(&env), amount_in, path).unwrap()
     }
 
     pub fn get_amounts_in(env: Env, amount_out: i128, path: Vec<Address>) -> Vec<i128> {
-        RaumFiV2Library::get_amounts_in(&env, Self::factory(&env), amount_out, path).unwrap()
+        RaumFiV2Library::get_amounts_in_path(&env, Self::factory(&env), amount_out, path).unwrap()
     }
 
     pub fn swap_exact_tokens_for_tokens(
@@ -183,7 +183,7 @@ impl RaumFiRouter {
     ) -> Vec<i128> {
         Self::ensure(&env, deadline);
         to.require_auth();
-        let amounts = RaumFiV2Library::get_amounts_out(&env, Self::factory(&env), amount_in, path.clone()).unwrap();
+        let amounts = RaumFiV2Library::get_amounts_out_path(&env, Self::factory(&env), amount_in, path.clone()).unwrap();
         if amounts.get(amounts.len() - 1).unwrap() < amount_out_min {
             panic!("RaumFiRouter: INSUFFICIENT_OUTPUT_AMOUNT");
         }
@@ -204,7 +204,7 @@ impl RaumFiRouter {
         Self::ensure(&env, deadline);
         to.require_auth();
 
-        let amounts = RaumFiV2Library::get_amounts_in(&env, Self::factory(&env), amount_out, path.clone()).unwrap();
+        let amounts = RaumFiV2Library::get_amounts_in_path(&env, Self::factory(&env), amount_out, path.clone()).unwrap();
         if amounts.get(0).unwrap() > amount_in_max {
             panic!("RaumFiRouter: EXCESSIVE_INPUT_AMOUNT");
         }
