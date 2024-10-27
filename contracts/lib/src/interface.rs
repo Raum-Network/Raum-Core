@@ -28,10 +28,10 @@ pub trait RaumFiLibraryTrait {
     fn calculate_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError>;
     
     /// Calculate amounts out for a given input amount and path
-    fn get_amounts_out(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
+    fn get_amounts_out_path(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
     
     /// Calculate amounts in for a desired output amount and path
-    fn get_amounts_in(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
+    fn get_amounts_in_path(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
     
     /// Calculate the constant product 'k'
     fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>;

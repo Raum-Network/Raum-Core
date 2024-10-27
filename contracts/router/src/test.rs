@@ -437,5 +437,7 @@ fn get_native_test(){
     
     let router = create_test_contract(&env);
     router.initialize(&factory.address, &token_c_client.address);
+    log!(&env , "native address" , router.native());
     assert_eq!(token_c_client.address , router.native())
 }
+

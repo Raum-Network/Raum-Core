@@ -243,7 +243,7 @@ fn test_calculate_k() {
     let reserve_a:i128 = 1000;
     let reserve_b:i128 = 2000;
 
-    let k = client.calculate_k(&reserve_a, &reserve_b);
+    let k = client.calculate_k_using_reserve(&reserve_a, &reserve_b);
 
     assert_eq!(k, 2_000_000);
 }
@@ -271,7 +271,7 @@ fn test_optimal_liquidity() {
     let reserve_a = 1000;
     let reserve_b = 2000;
 
-    let (amount_a, amount_b) = client.optimal_liquidity(
+    let (amount_a, amount_b) = client.optimal_liquidity_amounts(
         &amount_a_desired,
         &amount_b_desired,
         &amount_a_min,
@@ -305,7 +305,7 @@ fn test_calculate_price_impact() {
     let reserve_in = 10000;
     let reserve_out:i128 = 20000;
 
-    let price_impact = client.calculate_price_impact(&amount_in, &amount_out, &reserve_in, &reserve_out);
+    let price_impact = client.calculate_price_impact_swap(&amount_in, &amount_out, &reserve_in, &reserve_out);
     log!(&env, "price_impact: {}", price_impact);
     assert!(price_impact > 0 && price_impact < 1000); // Price impact should be between 0% and 10%
 }
@@ -358,7 +358,7 @@ fn test_calculate_burn_amounts() {
     let reserve_a = 1000;
     let reserve_b = 2000;
 
-    let (amount_a, amount_b) = client.calculate_burn_amounts(&liquidity, &total_supply, &reserve_a, &reserve_b);
+    let (amount_a, amount_b) = client.calculate_amounts_burn(&liquidity, &total_supply, &reserve_a, &reserve_b);
     log!(&env, "amount_a: {}", amount_a);
     log!(&env, "amount_b: {}", amount_b);
     assert_eq!(amount_a, 100);
@@ -385,12 +385,12 @@ fn test_is_constant_product_maintained() {
     let reserve_b = 2000;
     let new_reserve_a = 1100;
     let new_reserve_b = 1900; // Approximately maintains the constant product
-    let constant_product_maintained = client.is_constant_product_maintained(&reserve_a, &reserve_b, &new_reserve_a, &new_reserve_b);
+    let constant_product_maintained = client.is_constant_product(&reserve_a, &reserve_b, &new_reserve_a, &new_reserve_b);
     log!(&env, "constant_product_maintained: {}", constant_product_maintained);
     // assert!(client.is_constant_product_maintained(&reserve_a, &reserve_b, &new_reserve_a, &new_reserve_b));
     assert_eq!(constant_product_maintained, true);
     let bad_new_reserve_b = 1800; // Does not maintain the constant product
-    let constant_product_maintained = client.is_constant_product_maintained(&reserve_a, &reserve_b, &new_reserve_a, &bad_new_reserve_b);
+    let constant_product_maintained = client.is_constant_product(&reserve_a, &reserve_b, &new_reserve_a, &bad_new_reserve_b);
     log!(&env, "constant_product_maintained: {}", constant_product_maintained);
     assert_eq!(constant_product_maintained, false);
 }

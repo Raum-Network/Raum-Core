@@ -34,16 +34,16 @@ pub trait RaumFiLibraryTrait {
     fn calculate_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_out: i128) -> Result<i128, RaumFiLibraryError>;
     
     /// Calculate amounts out for a given input amount and path
-    fn get_amounts_out(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
+    fn get_amounts_out_path(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
     
     /// Calculate amounts in for a desired output amount and path
-    fn get_amounts_in(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
+    fn get_amounts_in_path(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>;
     
     /// Calculate the constant product 'k'
-    fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>;
+    fn calculate_k_using_reserve(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>;
     
     /// Calculate optimal liquidity amounts
-    fn optimal_liquidity(
+    fn optimal_liquidity_amounts(
         env: &Env,
         amount_a_desired: i128,
         amount_b_desired: i128,
@@ -54,7 +54,7 @@ pub trait RaumFiLibraryTrait {
     ) -> Result<(i128, i128), RaumFiLibraryError>;
     
     /// Calculate price impact of a swap
-    fn calculate_price_impact(
+    fn calculate_price_impact_swap(
         env: &Env,
         amount_in: i128,
         amount_out: i128,
@@ -73,7 +73,7 @@ pub trait RaumFiLibraryTrait {
     ) -> Result<i128, RaumFiLibraryError>;
     
     /// Calculate amounts to be returned when burning liquidity
-    fn calculate_burn_amounts(
+    fn calculate_amounts_burn(
         env: &Env,
         liquidity: i128,
         total_supply: i128,
@@ -82,7 +82,7 @@ pub trait RaumFiLibraryTrait {
     ) -> Result<(i128, i128), RaumFiLibraryError>;
     
     /// Check if the constant product is maintained after a swap
-    fn is_constant_product_maintained(
+    fn is_constant_product(
         env: &Env,
         reserve_a: i128,
         reserve_b: i128,
@@ -128,22 +128,22 @@ fn calculate_amount_in(env: &Env, amount_out: i128, reserve_in: i128, reserve_ou
 }
 
 /// Calculate amounts out for a given input amount and path
-fn get_amounts_out(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
+fn get_amounts_out_path(env: &Env, factory: Address, amount_in: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
     get_amounts_out(env, factory, amount_in, path)
 }
 
 /// Calculate amounts in for a desired output amount and path
-fn get_amounts_in(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
+fn get_amounts_in_path(env: &Env, factory: Address, amount_out: i128, path: Vec<Address>) -> Result<Vec<i128>, RaumFiLibraryError>{
     get_amounts_in(env, factory, amount_out, path)
 }
 
 /// Calculate the constant product 'k'
-fn calculate_k(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>{
+fn calculate_k_using_reserve(reserve_a: i128, reserve_b: i128) -> Result<i128, RaumFiLibraryError>{
     calculate_k(reserve_a, reserve_b)
 }
 
 /// Calculate optimal liquidity amounts
-fn optimal_liquidity(
+fn optimal_liquidity_amounts(
     env: &Env,
     amount_a_desired: i128,
     amount_b_desired: i128,
@@ -156,7 +156,7 @@ fn optimal_liquidity(
 }
 
 /// Calculate price impact of a swap
-fn calculate_price_impact(
+fn calculate_price_impact_swap(
     env: &Env,
     amount_in: i128,
     amount_out: i128,
@@ -179,7 +179,7 @@ fn calculate_liquidity_minted(
 }
 
 /// Calculate amounts to be returned when burning liquidity
-fn calculate_burn_amounts(
+fn calculate_amounts_burn(
     env: &Env,
     liquidity: i128,
     total_supply: i128,
@@ -190,7 +190,7 @@ fn calculate_burn_amounts(
 }
 
 /// Check if the constant product is maintained after a swap
-fn is_constant_product_maintained(
+fn is_constant_product(
     env: &Env,
     reserve_a: i128,
     reserve_b: i128,
