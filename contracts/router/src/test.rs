@@ -21,13 +21,13 @@ fn create_token_contract<'a>(e: &Env, admin: &Address) -> (TokenClient<'a>, Toke
 
 fn pair_token_wasm(e: &Env) -> BytesN<32> {
     soroban_sdk::contractimport!(
-        file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
+        file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
     );
     e.deployer().upload_contract_wasm(WASM)
 }
 
 pub mod pair {
-    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
+    soroban_sdk::contractimport!(file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
     pub type PairClient<'a> = Client<'a>; 
 
     pub fn register_pair_contract(env: &soroban_sdk::Env) -> soroban_sdk::Address {
@@ -50,7 +50,7 @@ fn create_pair_contract<'a>(e: &Env, factory: &Address, token_a: &Address, token
 }
 
 pub mod factory {
-    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/raumfi_factory.wasm");
+    soroban_sdk::contractimport!(file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/raumfi_factory.wasm");
     pub type FactoryClient<'a> = Client<'a>;
 }
 use factory::FactoryClient;

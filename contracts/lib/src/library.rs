@@ -15,7 +15,7 @@ use num_integer::Roots;
 
 mod pair {
     soroban_sdk::contractimport!(
-        file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
+        file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
     );
 }
 use pair::Client as PairClient;

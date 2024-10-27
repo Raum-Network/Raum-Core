@@ -8,7 +8,7 @@ use raumfi_library::*;
 use crate::factory_client::FactoryClient;
 
 soroban_sdk::contractimport!(
-    file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
+    file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
 );
 pub type PairClient<'a> = Client<'a>;
 

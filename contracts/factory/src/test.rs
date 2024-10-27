@@ -7,13 +7,13 @@ use token::StellarAssetClient as TokenAdminClient;
 
 fn pair_token_wasm(e: &Env) -> BytesN<32> {
     soroban_sdk::contractimport!(
-        file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
+        file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm"
     );
     e.deployer().upload_contract_wasm(WASM)
 }
 
 pub mod pair {
-    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
+    soroban_sdk::contractimport!(file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/pair.wasm");
     pub type PairClient<'a> = Client<'a>;
 }
 use pair::{PairClient, WASM};
@@ -65,7 +65,7 @@ fn test_create_pair() {
     let pair_wasm = pair_token_wasm(&env);  
     let token_0 = TokenClient::new(&env, &env.register_contract_wasm(None,WASM));
     let token_1 = TokenClient::new(&env, &env.register_contract_wasm(None,WASM));
-    soroban_sdk::contractimport!(file = "C:/Raum-Core/target/wasm32-unknown-unknown/release/rntoken.wasm");
+    soroban_sdk::contractimport!(file = "D:/Raum-Core/target/wasm32-unknown-unknown/release/rntoken.wasm");
     pub type TokenClient<'a> = Client<'a>;
     token_0.initialize(&fee_to_setter, &7, &String::from_str(&env, "Token 0"), &String::from_str(&env, "TOKEN0"));
     token_1.initialize(&fee_to_setter, &7, &String::from_str(&env, "Token 1"), &String::from_str(&env, "TOKEN1"));
